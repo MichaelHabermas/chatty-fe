@@ -74,9 +74,31 @@
                         <button type="button" class="metrics-debug-bundle-btn" id="copy-debug-bundle-btn" disabled>Copy debug bundle</button>
                     </div>
                 </div>
-                <p class="metrics-panel__subtitle">Observability for this session · click an assistant reply to inspect</p>
+                <p class="metrics-panel__subtitle">Observability for this session · click a reply to inspect · Shift+click two replies to compare</p>
                 <p class="metrics-panel__view metrics-panel__view--live" id="telemetry-view-label" aria-hidden="true"></p>
             </header>
+
+            <section class="telemetry-diff" id="telemetry-diff" hidden>
+                <div class="telemetry-diff__head">
+                    <span class="telemetry-diff__title">Turn compare</span>
+                    <button type="button" class="telemetry-diff__close" id="telemetry-diff-close" aria-label="Clear compare">
+                        Clear
+                    </button>
+                </div>
+                <div class="telemetry-diff__scroll">
+                    <table class="telemetry-diff__table">
+                        <thead>
+                            <tr>
+                                <th class="telemetry-diff__th">Metric</th>
+                                <th class="telemetry-diff__th">First</th>
+                                <th class="telemetry-diff__th">Second</th>
+                                <th class="telemetry-diff__th">Δ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="telemetry-diff-body"></tbody>
+                    </table>
+                </div>
+            </section>
 
             <div class="metric-group">
                 <div class="metric-label">Model</div>
@@ -102,6 +124,26 @@
                 <div class="cost-session-row">
                     <span class="cost-session-label">Session total</span>
                     <span class="cost-session-value" id="metric-cost-session">$0.0000</span>
+                </div>
+                <div class="cost-session-sparkline" id="cost-session-sparkline" hidden>
+                    <div class="cost-session-sparkline__head">
+                        <span class="cost-session-sparkline__label">Spend trajectory</span>
+                    </div>
+                    <svg
+                        class="cost-session-sparkline__chart"
+                        id="cost-session-sparkline-svg"
+                        viewBox="0 0 100 28"
+                        preserveAspectRatio="none"
+                        aria-hidden="true"
+                    >
+                        <polyline
+                            id="cost-session-sparkline-polyline"
+                            class="cost-session-sparkline__line"
+                            fill="none"
+                            stroke-width="1.75"
+                            points=""
+                        />
+                    </svg>
                 </div>
                 <p class="cost-disclaimer" id="metric-cost-disclaimer" hidden>
                     Rates approximate; check provider billing.

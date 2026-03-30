@@ -3,6 +3,7 @@ function createChatView(elements) {
 
     /** @type {Map<string, HTMLElement>} */
     const assistantNodesById = new Map();
+    /** @type {(id: string, modifiers?: { shiftKey?: boolean }) => void} */
     let onAssistantSelect = null;
 
     function scrollToBottom() {
@@ -35,6 +36,18 @@ function createChatView(elements) {
         }
     }
 
+    /**
+     * @param {{ pendingId: string | null, leftId: string | null, rightId: string | null }} ids
+     */
+    function setCompareHighlight(ids) {
+        const { pendingId, leftId, rightId } = ids;
+        for (const [id, node] of assistantNodesById) {
+            node.classList.toggle("message--compare-pending", Boolean(pendingId && id === pendingId));
+            node.classList.toggle("message--compare-left", Boolean(leftId && id === leftId));
+            node.classList.toggle("message--compare-right", Boolean(rightId && id === rightId));
+        }
+    }
+
     function bindAssistantNode(node, id) {
         assistantNodesById.set(id, node);
         node.classList.add("message--assistant-selectable");
@@ -42,15 +55,16 @@ function createChatView(elements) {
         node.setAttribute("role", "button");
         node.setAttribute("aria-label", "Show telemetry for this reply");
 
-        function activate() {
-            onAssistantSelect?.(id);
+        function handleActivate(event) {
+            const shiftKey = event.shiftKey === true;
+            onAssistantSelect?.(id, { shiftKey });
         }
 
-        node.addEventListener("click", activate);
+        node.addEventListener("click", handleActivate);
         node.addEventListener("keydown", (event) => {
             if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
-                activate();
+                handleActivate(event);
             }
         });
     }
@@ -107,7 +121,7 @@ function createChatView(elements) {
     }
 
     /**
-     * @param {(id: string) => void} handler
+     * @param {(id: string, modifiers?: { shiftKey?: boolean }) => void} handler
      */
     function setOnAssistantSelect(handler) {
         onAssistantSelect = handler;
@@ -122,6 +136,7 @@ function createChatView(elements) {
         updateMessage,
         setAssistantInteractionEnabled,
         setTelemetrySelection,
+        setCompareHighlight,
         clearThreadDom,
         setOnAssistantSelect,
     };

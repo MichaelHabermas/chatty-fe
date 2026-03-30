@@ -8,6 +8,10 @@ function createAppState(initialSettings) {
         abortController: null,
         sessionCostUsd: 0,
         telemetrySelectionId: null,
+        /** @type {string | null} first Shift+click target for turn compare */
+        telemetryComparePendingId: null,
+        /** @type {{ left: string, right: string } | null} two assistant ids (selection order) */
+        telemetryComparePair: null,
     };
 }
 

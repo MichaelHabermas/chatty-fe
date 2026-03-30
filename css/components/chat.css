@@ -181,6 +181,21 @@
     box-shadow: 0 0 16px rgba(0, 240, 255, 0.12);
 }
 
+.message--compare-pending .message-content {
+    border-color: rgba(255, 184, 0, 0.55);
+    box-shadow: 0 0 0 1px rgba(255, 184, 0, 0.25);
+}
+
+.message--compare-left .message-content {
+    border-color: rgba(0, 240, 255, 0.75);
+    box-shadow: inset 0 0 0 1px rgba(0, 240, 255, 0.35);
+}
+
+.message--compare-right .message-content {
+    border-color: rgba(255, 120, 200, 0.6);
+    box-shadow: inset 0 0 0 1px rgba(255, 120, 200, 0.35);
+}
+
 .messages--telemetry-disabled .message--assistant-selectable {
     pointer-events: none;
     opacity: 0.65;

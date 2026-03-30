@@ -65,3 +65,35 @@ Paste-ready repro material for **chatty-be** issues without exposing secrets or 
 ### Docs
 
 `js/telemetry/debugBundle.js`, `js/main.js`.
+
+---
+
+## Session spend trajectory (chatty-fe)
+
+### Added
+
+Under **Session total**, a **Spend trajectory** strip plots **cumulative** session USD after each **completed** assistant turn (same counting rules as cost: only turns with a countable `resolution`). Hidden when there are no completed turns. Recomputes whenever telemetry view refreshes.
+
+### Why
+
+You see the **shape** of spend across the conversation, not only the final session total.
+
+### Docs
+
+`js/telemetry/sessionCostSeries.js`, `js/ui/metricsView.js`.
+
+---
+
+## Turn compare (chatty-fe)
+
+### Added
+
+**Shift+click** an assistant reply to mark the **first** turn, then **Shift+click** another to open **Turn compare**: a table of **First** vs **Second** with **Δ** for cost, latency, tokens, and web-source count (plus model, Server-Timing rows, truncated request ids). The main Telemetry block reflects the **first** turn. **Clear** on the panel, **Esc** (when the chat input is not focused), or a **normal click** on a reply exits compare. New sends clear compare state. Left/right bubbles use distinct highlights.
+
+### Why
+
+See **what changed** between two completions without pasting two debug bundles.
+
+### Docs
+
+`js/telemetry/telemetryDiff.js`, `js/ui/metricsView.js`, `js/ui/chatView.js`, `js/main.js`.

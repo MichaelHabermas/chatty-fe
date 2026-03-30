@@ -3,6 +3,7 @@ import { resolveRequestCost } from "./pricing/resolveCost.js";
 import { loadThread, saveThread } from "./storage/threadPersistence.js";
 import { sendChatCompletion, streamChatCompletion } from "./services/chatClient.js";
 import { buildDebugBundleMarkdown, canExportDebugBundle } from "./telemetry/debugBundle.js";
+import { computeCumulativeCostSeries } from "./telemetry/sessionCostSeries.js";
 import { buildTelemetrySnapshot } from "./telemetry/snapshot.js";
 import { createAppState, createMessage } from "./state.js";
 import { createChatView } from "./ui/chatView.js";
@@ -44,9 +45,14 @@ const dom = {
     metricCostCompletion: document.querySelector("#metric-cost-completion"),
     metricCostSession: document.querySelector("#metric-cost-session"),
     metricCostDisclaimer: document.querySelector("#metric-cost-disclaimer"),
+    costSessionSparkline: document.querySelector("#cost-session-sparkline"),
+    costSessionSparklinePolyline: document.querySelector("#cost-session-sparkline-polyline"),
     metricsPanel: document.querySelector("#metrics-panel"),
     telemetryViewLabel: document.querySelector("#telemetry-view-label"),
     copyDebugBundleBtn: document.querySelector("#copy-debug-bundle-btn"),
+    telemetryDiff: document.querySelector("#telemetry-diff"),
+    telemetryDiffBody: document.querySelector("#telemetry-diff-body"),
+    telemetryDiffClose: document.querySelector("#telemetry-diff-close"),
 };
 
 const initialSettings = loadSettings();
@@ -83,6 +89,10 @@ const metricsView = createMetricsView({
     costDisclaimerEl: dom.metricCostDisclaimer,
     panelEl: dom.metricsPanel,
     telemetryViewLabelEl: dom.telemetryViewLabel,
+    costSessionSparklineEl: dom.costSessionSparkline,
+    costSessionSparklinePolylineEl: dom.costSessionSparklinePolyline,
+    telemetryDiffEl: dom.telemetryDiff,
+    telemetryDiffBodyEl: dom.telemetryDiffBody,
 });
 
 function messageToPersisted(m) {
@@ -146,35 +156,94 @@ function updateDebugBundleButton() {
     dom.copyDebugBundleBtn.disabled = !canExportDebugBundle(state);
 }
 
+function refreshSessionSparkline() {
+    metricsView.updateSessionCostSparkline(computeCumulativeCostSeries(state.messages));
+}
+
+function clearTelemetryCompare() {
+    state.telemetryComparePendingId = null;
+    state.telemetryComparePair = null;
+}
+
 function applyTelemetryView() {
     if (state.isStreaming) {
         metricsView.setTelemetryViewMode("live");
         chatView.setTelemetrySelection(null);
-    } else {
-        const lastId = getLastAssistantSnapshotId(state.messages);
-        if (!lastId) {
-            resetMetricsToSessionBaseline();
-            metricsView.setTelemetryViewMode("empty");
-            chatView.setTelemetrySelection(null);
-        } else {
-            let targetId = state.telemetrySelectionId;
-            if (!targetId || !state.messages.some((m) => m.id === targetId && m.telemetrySnapshot)) {
-                targetId = lastId;
-            }
-
-            const msg = state.messages.find((m) => m.id === targetId);
-            const snapshot = msg?.telemetrySnapshot;
-            if (!snapshot || snapshot.v !== 1) {
-                resetMetricsToSessionBaseline();
-            } else {
-                metricsView.hydrateFromSnapshot(snapshot, state.sessionCostUsd);
-                const viewingHistory = targetId !== lastId;
-                metricsView.setTelemetryViewMode(viewingHistory ? "history" : "live");
-                chatView.setTelemetrySelection(viewingHistory ? targetId : null);
-            }
-        }
+        chatView.setCompareHighlight({ pendingId: null, leftId: null, rightId: null });
+        metricsView.hideTelemetryDiff();
+        updateDebugBundleButton();
+        refreshSessionSparkline();
+        return;
     }
+
+    const pair = state.telemetryComparePair;
+    if (pair) {
+        const leftMsg = state.messages.find((m) => m.id === pair.left);
+        const rightMsg = state.messages.find((m) => m.id === pair.right);
+        const lSnap = leftMsg?.telemetrySnapshot;
+        const rSnap = rightMsg?.telemetrySnapshot;
+        if (lSnap?.v === 1 && rSnap?.v === 1) {
+            metricsView.hydrateFromSnapshot(lSnap, state.sessionCostUsd);
+            metricsView.showTelemetryDiff(lSnap, rSnap);
+            metricsView.setTelemetryViewMode("diff");
+            chatView.setTelemetrySelection(null);
+            chatView.setCompareHighlight({ pendingId: null, leftId: pair.left, rightId: pair.right });
+            updateDebugBundleButton();
+            refreshSessionSparkline();
+            return;
+        }
+        state.telemetryComparePair = null;
+    }
+
+    metricsView.hideTelemetryDiff();
+
+    const lastId = getLastAssistantSnapshotId(state.messages);
+    if (!lastId) {
+        resetMetricsToSessionBaseline();
+        chatView.setTelemetrySelection(null);
+        chatView.setCompareHighlight({
+            pendingId: state.telemetryComparePendingId,
+            leftId: null,
+            rightId: null,
+        });
+        metricsView.setTelemetryViewMode(state.telemetryComparePendingId ? "pending" : "empty");
+        updateDebugBundleButton();
+        refreshSessionSparkline();
+        return;
+    }
+
+    let targetId = state.telemetrySelectionId;
+    if (!targetId || !state.messages.some((m) => m.id === targetId && m.telemetrySnapshot)) {
+        targetId = lastId;
+    }
+
+    const msg = state.messages.find((m) => m.id === targetId);
+    const snapshot = msg?.telemetrySnapshot;
+    if (!snapshot || snapshot.v !== 1) {
+        resetMetricsToSessionBaseline();
+        chatView.setCompareHighlight({
+            pendingId: state.telemetryComparePendingId,
+            leftId: null,
+            rightId: null,
+        });
+        metricsView.setTelemetryViewMode(state.telemetryComparePendingId ? "pending" : "empty");
+        updateDebugBundleButton();
+        refreshSessionSparkline();
+        return;
+    }
+
+    metricsView.hydrateFromSnapshot(snapshot, state.sessionCostUsd);
+    const viewingHistory = targetId !== lastId;
+    const mode = state.telemetryComparePendingId ? "pending" : viewingHistory ? "history" : "live";
+    metricsView.setTelemetryViewMode(mode);
+    chatView.setTelemetrySelection(viewingHistory ? targetId : null);
+    chatView.setCompareHighlight({
+        pendingId: state.telemetryComparePendingId,
+        leftId: null,
+        rightId: null,
+    });
     updateDebugBundleButton();
+    refreshSessionSparkline();
 }
 
 function restorePersistedThread() {
@@ -235,12 +304,36 @@ createSettingsView(
 metricsView.updateFromSettings(initialSettings);
 chatView.setConnectionStatus(`ready • ${initialSettings.baseUrl}`);
 
-chatView.setOnAssistantSelect((id) => {
-    const lastId = getLastAssistantSnapshotId(state.messages);
-    if (id === lastId) {
+chatView.setOnAssistantSelect((id, modifiers) => {
+    const shiftKey = modifiers?.shiftKey === true;
+
+    if (shiftKey) {
+        if (state.telemetryComparePair) {
+            state.telemetryComparePair = null;
+        }
+        if (state.telemetryComparePendingId === id) {
+            state.telemetryComparePendingId = null;
+        } else if (!state.telemetryComparePendingId) {
+            state.telemetryComparePendingId = id;
+        } else {
+            const leftId = state.telemetryComparePendingId;
+            const leftMsg = state.messages.find((m) => m.id === leftId);
+            const rightMsg = state.messages.find((m) => m.id === id);
+            if (leftMsg?.telemetrySnapshot?.v === 1 && rightMsg?.telemetrySnapshot?.v === 1) {
+                state.telemetryComparePair = { left: leftId, right: id };
+            }
+            state.telemetryComparePendingId = null;
+        }
         state.telemetrySelectionId = null;
     } else {
-        state.telemetrySelectionId = id;
+        state.telemetryComparePendingId = null;
+        state.telemetryComparePair = null;
+        const lastId = getLastAssistantSnapshotId(state.messages);
+        if (id === lastId) {
+            state.telemetrySelectionId = null;
+        } else {
+            state.telemetrySelectionId = id;
+        }
     }
     applyTelemetryView();
     persistSession();
@@ -272,6 +365,27 @@ restorePersistedThread();
 metricsView.updateSessionCost(state.sessionCostUsd);
 applyTelemetryView();
 
+dom.telemetryDiffClose?.addEventListener("click", () => {
+    clearTelemetryCompare();
+    applyTelemetryView();
+    persistSession();
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") {
+        return;
+    }
+    if (document.activeElement === dom.chatInput) {
+        return;
+    }
+    if (!state.telemetryComparePendingId && !state.telemetryComparePair) {
+        return;
+    }
+    clearTelemetryCompare();
+    applyTelemetryView();
+    persistSession();
+});
+
 dom.chatForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -280,6 +394,7 @@ dom.chatForm.addEventListener("submit", async (event) => {
         return;
     }
 
+    clearTelemetryCompare();
     state.telemetrySelectionId = null;
 
     const userMessage = createMessage("user", prompt);

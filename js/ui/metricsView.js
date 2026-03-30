@@ -1,3 +1,5 @@
+import { buildDiffRows } from "../telemetry/telemetryDiff.js";
+
 function formatUsd4(value) {
     if (value == null || Number.isNaN(value)) {
         return "—";
@@ -45,6 +47,10 @@ function createMetricsView(elements) {
         costDisclaimerEl,
         panelEl,
         telemetryViewLabelEl,
+        costSessionSparklineEl,
+        costSessionSparklinePolylineEl,
+        telemetryDiffEl,
+        telemetryDiffBodyEl,
     } = elements;
 
     function resetLastRequestCost() {
@@ -60,6 +66,53 @@ function createMetricsView(elements) {
 
     function updateSessionCost(sessionTotalUsd) {
         costSessionEl.textContent = formatUsd4(sessionTotalUsd);
+    }
+
+    /**
+     * @param {number[]} series cumulative USD after each completed assistant turn
+     */
+    function updateSessionCostSparkline(series) {
+        if (!costSessionSparklineEl || !costSessionSparklinePolylineEl) {
+            return;
+        }
+        if (!Array.isArray(series) || series.length === 0) {
+            costSessionSparklineEl.hidden = true;
+            costSessionSparklinePolylineEl.setAttribute("points", "");
+            costSessionSparklineEl.removeAttribute("aria-label");
+            return;
+        }
+
+        costSessionSparklineEl.hidden = false;
+        const max = Math.max(...series, 1e-12);
+        const n = series.length;
+        const w = 100;
+        const h = 28;
+        const padX = 2;
+        const padY = 4;
+
+        const coords = [];
+        if (n === 1) {
+            const val = series[0];
+            const yNorm = max > 0 ? val / max : 0;
+            const y = h - padY - yNorm * (h - 2 * padY);
+            coords.push([padX, y], [w - padX, y]);
+        } else {
+            for (let i = 0; i < n; i += 1) {
+                const x = padX + (i / (n - 1)) * (w - 2 * padX);
+                const val = series[i];
+                const yNorm = max > 0 ? val / max : 0;
+                const y = h - padY - yNorm * (h - 2 * padY);
+                coords.push([x, y]);
+            }
+        }
+
+        const points = coords.map(([x, y]) => `${x.toFixed(2)},${y.toFixed(2)}`).join(" ");
+
+        costSessionSparklinePolylineEl.setAttribute("points", points);
+        costSessionSparklineEl.setAttribute(
+            "aria-label",
+            `Cumulative session spend over ${n} completed assistant turn${n === 1 ? "" : "s"}`,
+        );
     }
 
     function setStreamStatus(statusText) {
@@ -175,16 +228,25 @@ function createMetricsView(elements) {
     }
 
     /**
-     * @param {"live" | "history" | "empty"} mode
+     * @param {"live" | "history" | "empty" | "diff" | "pending"} mode
      */
     function setTelemetryViewMode(mode) {
         if (panelEl) {
             panelEl.classList.toggle("metrics-panel--history", mode === "history");
+            panelEl.classList.toggle("metrics-panel--diff", mode === "diff");
         }
         if (!telemetryViewLabelEl) {
             return;
         }
-        if (mode === "history") {
+        if (mode === "diff") {
+            telemetryViewLabelEl.classList.remove("metrics-panel__view--live");
+            telemetryViewLabelEl.removeAttribute("aria-hidden");
+            telemetryViewLabelEl.textContent = "Comparing two replies (first vs second)";
+        } else if (mode === "pending") {
+            telemetryViewLabelEl.classList.remove("metrics-panel__view--live");
+            telemetryViewLabelEl.removeAttribute("aria-hidden");
+            telemetryViewLabelEl.textContent = "Shift+click another reply to compare";
+        } else if (mode === "history") {
             telemetryViewLabelEl.classList.remove("metrics-panel__view--live");
             telemetryViewLabelEl.removeAttribute("aria-hidden");
             telemetryViewLabelEl.textContent = "Inspecting a past assistant reply";
@@ -196,6 +258,37 @@ function createMetricsView(elements) {
             telemetryViewLabelEl.classList.add("metrics-panel__view--live");
             telemetryViewLabelEl.setAttribute("aria-hidden", "true");
             telemetryViewLabelEl.textContent = "";
+        }
+    }
+
+    function showTelemetryDiff(leftSnap, rightSnap) {
+        if (!telemetryDiffEl || !telemetryDiffBodyEl) {
+            return;
+        }
+        telemetryDiffBodyEl.replaceChildren();
+        for (const row of buildDiffRows(leftSnap, rightSnap)) {
+            const tr = document.createElement("tr");
+            const mk = (text, isDelta) => {
+                const td = document.createElement("td");
+                td.className = isDelta ? "telemetry-diff__td telemetry-diff__td--delta" : "telemetry-diff__td";
+                td.textContent = text;
+                tr.appendChild(td);
+            };
+            mk(row.label, false);
+            mk(row.a, false);
+            mk(row.b, false);
+            mk(row.delta, true);
+            telemetryDiffBodyEl.appendChild(tr);
+        }
+        telemetryDiffEl.hidden = false;
+    }
+
+    function hideTelemetryDiff() {
+        if (telemetryDiffBodyEl) {
+            telemetryDiffBodyEl.replaceChildren();
+        }
+        if (telemetryDiffEl) {
+            telemetryDiffEl.hidden = true;
         }
     }
 
@@ -265,6 +358,9 @@ function createMetricsView(elements) {
         setWebSourceCount,
         hydrateFromSnapshot,
         setTelemetryViewMode,
+        updateSessionCostSparkline,
+        showTelemetryDiff,
+        hideTelemetryDiff,
     };
 }
 
