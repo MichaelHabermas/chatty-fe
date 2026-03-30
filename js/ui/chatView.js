@@ -142,6 +142,14 @@ function createChatView(elements) {
         onAssistantSelect = handler;
     }
 
+    /**
+     * @param {string} id
+     * @returns {HTMLElement | null}
+     */
+    function getAssistantNode(id) {
+        return assistantNodesById.get(id) ?? null;
+    }
+
     return {
         addMessage,
         clearInput,
@@ -155,6 +163,7 @@ function createChatView(elements) {
         setAssistantStreaming,
         clearThreadDom,
         setOnAssistantSelect,
+        getAssistantNode,
     };
 }
 

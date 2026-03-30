@@ -6,6 +6,7 @@ import { buildDebugBundleMarkdown, canExportDebugBundle } from "./telemetry/debu
 import { computeCumulativeCostSeries } from "./telemetry/sessionCostSeries.js";
 import { buildTelemetrySnapshot } from "./telemetry/snapshot.js";
 import { createAppState, createMessage } from "./state.js";
+import { createCompareConstellation } from "./ui/compareConstellation.js";
 import { createChatView } from "./ui/chatView.js";
 import { createMetricsView } from "./ui/metricsView.js";
 import { createSettingsView } from "./ui/settingsView.js";
@@ -66,6 +67,22 @@ const chatView = createChatView({
     emptyStateEl: dom.emptyState,
     connectionStatusEl: dom.connectionStatus,
 });
+
+const compareConstellation = createCompareConstellation({
+    messagesEl: dom.messages,
+    getAssistantNode: (id) => chatView.getAssistantNode(id),
+});
+
+function syncCompareConstellation() {
+    if (state.isStreaming || !state.telemetryComparePair) {
+        compareConstellation.sync(null);
+        return;
+    }
+    compareConstellation.sync({
+        left: state.telemetryComparePair.left,
+        right: state.telemetryComparePair.right,
+    });
+}
 
 const metricsView = createMetricsView({
     modelEl: dom.metricModel,
@@ -166,84 +183,88 @@ function clearTelemetryCompare() {
 }
 
 function applyTelemetryView() {
-    if (state.isStreaming) {
-        metricsView.setTelemetryViewMode("live");
-        chatView.setTelemetrySelection(null);
-        chatView.setCompareHighlight({ pendingId: null, leftId: null, rightId: null });
-        metricsView.hideTelemetryDiff();
-        updateDebugBundleButton();
-        refreshSessionSparkline();
-        return;
-    }
-
-    const pair = state.telemetryComparePair;
-    if (pair) {
-        const leftMsg = state.messages.find((m) => m.id === pair.left);
-        const rightMsg = state.messages.find((m) => m.id === pair.right);
-        const lSnap = leftMsg?.telemetrySnapshot;
-        const rSnap = rightMsg?.telemetrySnapshot;
-        if (lSnap?.v === 1 && rSnap?.v === 1) {
-            metricsView.hydrateFromSnapshot(lSnap, state.sessionCostUsd);
-            metricsView.showTelemetryDiff(lSnap, rSnap);
-            metricsView.setTelemetryViewMode("diff");
+    try {
+        if (state.isStreaming) {
+            metricsView.setTelemetryViewMode("live");
             chatView.setTelemetrySelection(null);
-            chatView.setCompareHighlight({ pendingId: null, leftId: pair.left, rightId: pair.right });
+            chatView.setCompareHighlight({ pendingId: null, leftId: null, rightId: null });
+            metricsView.hideTelemetryDiff();
             updateDebugBundleButton();
             refreshSessionSparkline();
             return;
         }
-        state.telemetryComparePair = null;
-    }
 
-    metricsView.hideTelemetryDiff();
+        const pair = state.telemetryComparePair;
+        if (pair) {
+            const leftMsg = state.messages.find((m) => m.id === pair.left);
+            const rightMsg = state.messages.find((m) => m.id === pair.right);
+            const lSnap = leftMsg?.telemetrySnapshot;
+            const rSnap = rightMsg?.telemetrySnapshot;
+            if (lSnap?.v === 1 && rSnap?.v === 1) {
+                metricsView.hydrateFromSnapshot(lSnap, state.sessionCostUsd);
+                metricsView.showTelemetryDiff(lSnap, rSnap);
+                metricsView.setTelemetryViewMode("diff");
+                chatView.setTelemetrySelection(null);
+                chatView.setCompareHighlight({ pendingId: null, leftId: pair.left, rightId: pair.right });
+                updateDebugBundleButton();
+                refreshSessionSparkline();
+                return;
+            }
+            state.telemetryComparePair = null;
+        }
 
-    const lastId = getLastAssistantSnapshotId(state.messages);
-    if (!lastId) {
-        resetMetricsToSessionBaseline();
-        chatView.setTelemetrySelection(null);
+        metricsView.hideTelemetryDiff();
+
+        const lastId = getLastAssistantSnapshotId(state.messages);
+        if (!lastId) {
+            resetMetricsToSessionBaseline();
+            chatView.setTelemetrySelection(null);
+            chatView.setCompareHighlight({
+                pendingId: state.telemetryComparePendingId,
+                leftId: null,
+                rightId: null,
+            });
+            metricsView.setTelemetryViewMode(state.telemetryComparePendingId ? "pending" : "empty");
+            updateDebugBundleButton();
+            refreshSessionSparkline();
+            return;
+        }
+
+        let targetId = state.telemetrySelectionId;
+        if (!targetId || !state.messages.some((m) => m.id === targetId && m.telemetrySnapshot)) {
+            targetId = lastId;
+        }
+
+        const msg = state.messages.find((m) => m.id === targetId);
+        const snapshot = msg?.telemetrySnapshot;
+        if (!snapshot || snapshot.v !== 1) {
+            resetMetricsToSessionBaseline();
+            chatView.setCompareHighlight({
+                pendingId: state.telemetryComparePendingId,
+                leftId: null,
+                rightId: null,
+            });
+            metricsView.setTelemetryViewMode(state.telemetryComparePendingId ? "pending" : "empty");
+            updateDebugBundleButton();
+            refreshSessionSparkline();
+            return;
+        }
+
+        metricsView.hydrateFromSnapshot(snapshot, state.sessionCostUsd);
+        const viewingHistory = targetId !== lastId;
+        const mode = state.telemetryComparePendingId ? "pending" : viewingHistory ? "history" : "live";
+        metricsView.setTelemetryViewMode(mode);
+        chatView.setTelemetrySelection(viewingHistory ? targetId : null);
         chatView.setCompareHighlight({
             pendingId: state.telemetryComparePendingId,
             leftId: null,
             rightId: null,
         });
-        metricsView.setTelemetryViewMode(state.telemetryComparePendingId ? "pending" : "empty");
         updateDebugBundleButton();
         refreshSessionSparkline();
-        return;
+    } finally {
+        syncCompareConstellation();
     }
-
-    let targetId = state.telemetrySelectionId;
-    if (!targetId || !state.messages.some((m) => m.id === targetId && m.telemetrySnapshot)) {
-        targetId = lastId;
-    }
-
-    const msg = state.messages.find((m) => m.id === targetId);
-    const snapshot = msg?.telemetrySnapshot;
-    if (!snapshot || snapshot.v !== 1) {
-        resetMetricsToSessionBaseline();
-        chatView.setCompareHighlight({
-            pendingId: state.telemetryComparePendingId,
-            leftId: null,
-            rightId: null,
-        });
-        metricsView.setTelemetryViewMode(state.telemetryComparePendingId ? "pending" : "empty");
-        updateDebugBundleButton();
-        refreshSessionSparkline();
-        return;
-    }
-
-    metricsView.hydrateFromSnapshot(snapshot, state.sessionCostUsd);
-    const viewingHistory = targetId !== lastId;
-    const mode = state.telemetryComparePendingId ? "pending" : viewingHistory ? "history" : "live";
-    metricsView.setTelemetryViewMode(mode);
-    chatView.setTelemetrySelection(viewingHistory ? targetId : null);
-    chatView.setCompareHighlight({
-        pendingId: state.telemetryComparePendingId,
-        leftId: null,
-        rightId: null,
-    });
-    updateDebugBundleButton();
-    refreshSessionSparkline();
 }
 
 function restorePersistedThread() {

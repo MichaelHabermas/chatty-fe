@@ -49,12 +49,44 @@
                 </form>
             </section>
 
-            <div class="messages" id="messages" aria-live="polite">
-                <div class="message assistant">
-                    <div class="message-content" id="empty-state-message">
-                        Ask anything to start chatting.
+            <div class="chat-messages-stack">
+                <div class="messages" id="messages" aria-live="polite">
+                    <div class="message assistant">
+                        <div class="message-content" id="empty-state-message">
+                            Ask anything to start chatting.
+                        </div>
                     </div>
                 </div>
+                <svg
+                    class="compare-constellation"
+                    id="compare-constellation-svg"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                >
+                    <defs>
+                        <linearGradient
+                            id="compare-constellation-gradient"
+                            gradientUnits="userSpaceOnUse"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="0"
+                        >
+                            <stop offset="0%" stop-color="#00f0ff" />
+                            <stop offset="100%" stop-color="#ff78c8" />
+                        </linearGradient>
+                    </defs>
+                    <path
+                        class="compare-constellation__path"
+                        data-compare-path
+                        fill="none"
+                        stroke="url(#compare-constellation-gradient)"
+                        stroke-width="2.25"
+                        stroke-linecap="round"
+                    />
+                    <circle class="compare-constellation__node compare-constellation__node--a" data-compare-node-a r="4" fill="#00f0ff" opacity="0" />
+                    <circle class="compare-constellation__node compare-constellation__node--b" data-compare-node-b r="4" fill="#ff78c8" opacity="0" />
+                </svg>
             </div>
 
             <div class="input-area">

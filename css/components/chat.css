@@ -120,8 +120,17 @@
     color: var(--text-primary);
 }
 
+.chat-messages-stack {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
 .messages {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 24px;
     display: flex;
@@ -129,6 +138,35 @@
     gap: 16px;
     scroll-behavior: smooth;
 }
+
+.compare-constellation {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+    overflow: visible;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.compare-constellation--active {
+    opacity: 1;
+}
+
+.compare-constellation__path {
+    filter: drop-shadow(0 0 5px rgba(0, 240, 255, 0.35)) drop-shadow(0 0 10px rgba(255, 120, 200, 0.2));
+}
+
+.compare-constellation__node {
+    filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.55));
+}
+
+.compare-constellation__node--b {
+    filter: drop-shadow(0 0 6px rgba(255, 120, 200, 0.55));
+}
+
 
 .message {
     display: flex;
