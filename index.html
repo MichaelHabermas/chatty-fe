@@ -67,9 +67,39 @@
         </main>
 
         <aside class="metrics-panel" aria-label="Request metrics">
+            <header class="metrics-panel__header">
+                <h2 class="metrics-panel__title">Telemetry</h2>
+                <p class="metrics-panel__subtitle">Observability for this session</p>
+            </header>
+
             <div class="metric-group">
                 <div class="metric-label">Model</div>
                 <div class="metric-value" id="metric-model">--</div>
+            </div>
+
+            <div class="metric-group metric-group--cost">
+                <div class="metric-label">Cost</div>
+                <div class="metric-cost-primary">
+                    <span class="metric-value metric-value--cost" id="metric-cost-last">—</span>
+                    <span class="cost-source-badge" id="metric-cost-source" hidden></span>
+                </div>
+                <div class="cost-breakdown" id="metric-cost-breakdown" hidden>
+                    <div class="cost-breakdown-row">
+                        <span>Prompt</span>
+                        <span class="cost-breakdown-value" id="metric-cost-prompt">—</span>
+                    </div>
+                    <div class="cost-breakdown-row">
+                        <span>Completion</span>
+                        <span class="cost-breakdown-value" id="metric-cost-completion">—</span>
+                    </div>
+                </div>
+                <div class="cost-session-row">
+                    <span class="cost-session-label">Session total</span>
+                    <span class="cost-session-value" id="metric-cost-session">$0.0000</span>
+                </div>
+                <p class="cost-disclaimer" id="metric-cost-disclaimer" hidden>
+                    Rates approximate; check provider billing.
+                </p>
             </div>
 
             <div class="metric-group">

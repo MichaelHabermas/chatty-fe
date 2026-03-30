@@ -6,6 +6,7 @@ function createAppState(initialSettings) {
         currentAssistantMessageId: null,
         requestStartedAt: null,
         abortController: null,
+        sessionCostUsd: 0,
     };
 }
 

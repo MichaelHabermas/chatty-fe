@@ -1,3 +1,119 @@
+.metrics-panel__header {
+    padding-bottom: 4px;
+    margin-bottom: -8px;
+    border-bottom: 1px solid rgba(0, 240, 255, 0.12);
+    animation: metricsFadeIn 0.55s ease-out both;
+}
+
+.metrics-panel__title {
+    font-family: Outfit, system-ui, sans-serif;
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.metrics-panel__subtitle {
+    font-family: Outfit, system-ui, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin: 6px 0 0;
+    letter-spacing: 0.02em;
+}
+
+.metric-group--cost {
+    animation: metricsFadeIn 0.55s ease-out 0.08s both;
+}
+
+.metric-cost-primary {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.metric-value--cost {
+    color: var(--accent-amber);
+    text-shadow: 0 0 12px rgba(255, 184, 0, 0.35);
+    font-size: 22px;
+}
+
+.cost-source-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 184, 0, 0.35);
+    background: rgba(255, 184, 0, 0.08);
+    color: var(--accent-amber);
+}
+
+.cost-source-badge--api {
+    border-color: rgba(0, 217, 96, 0.4);
+    background: rgba(0, 217, 96, 0.1);
+    color: var(--success-green);
+}
+
+.cost-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 184, 0, 0.12);
+}
+
+.cost-breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.cost-breakdown-value {
+    color: var(--accent-amber);
+    font-weight: 600;
+}
+
+.cost-session-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0, 240, 255, 0.1);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+}
+
+.cost-session-label {
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.cost-session-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.cost-disclaimer {
+    font-family: Outfit, system-ui, sans-serif;
+    font-size: 10px;
+    line-height: 1.35;
+    color: var(--text-muted);
+    margin: 8px 0 0;
+    opacity: 0.9;
+}
+
 .metric-group {
     display: flex;
     flex-direction: column;

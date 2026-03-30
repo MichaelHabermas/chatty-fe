@@ -48,12 +48,25 @@ function parseServerTiming(serverTimingHeader) {
     return timings;
 }
 
+function parseCostUsdHeader(response) {
+    const raw =
+        response.headers.get("X-Chatty-Cost-Usd") ||
+        response.headers.get("x-chatty-cost-usd") ||
+        "";
+    if (!raw.trim()) {
+        return null;
+    }
+    const n = parseFloat(raw.trim());
+    return Number.isFinite(n) ? n : null;
+}
+
 function getMetadataFromResponse(response, requestStartedAt) {
     const requestId = response.headers.get("X-Groq-Request-Id") || "";
     const timings = parseServerTiming(response.headers.get("Server-Timing"));
     const latencyMs = Date.now() - requestStartedAt;
+    const costUsd = parseCostUsdHeader(response);
 
-    return { requestId, timings, latencyMs };
+    return { requestId, timings, latencyMs, costUsd };
 }
 
 async function sendChatCompletion({

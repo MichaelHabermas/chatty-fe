@@ -1,3 +1,15 @@
+function formatUsd4(value) {
+    if (value == null || Number.isNaN(value)) {
+        return "—";
+    }
+    return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
+    }).format(value);
+}
+
 function createMetricsView(elements) {
     const {
         modelEl,
@@ -12,13 +24,36 @@ function createMetricsView(elements) {
         processingTimeEl,
         responseTimeEl,
         progressFillEl,
+        costLastEl,
+        costSourceBadgeEl,
+        costBreakdownEl,
+        costPromptEl,
+        costCompletionEl,
+        costSessionEl,
+        costDisclaimerEl,
     } = elements;
+
+    function resetLastRequestCost() {
+        costLastEl.textContent = "—";
+        costSourceBadgeEl.hidden = true;
+        costSourceBadgeEl.textContent = "";
+        costSourceBadgeEl.className = "cost-source-badge";
+        costBreakdownEl.hidden = true;
+        costPromptEl.textContent = "—";
+        costCompletionEl.textContent = "—";
+        costDisclaimerEl.hidden = true;
+    }
+
+    function updateSessionCost(sessionTotalUsd) {
+        costSessionEl.textContent = formatUsd4(sessionTotalUsd);
+    }
 
     function setStreamStatus(statusText) {
         streamLabelEl.textContent = statusText;
     }
 
     function resetDynamic() {
+        modelEl.textContent = "--";
         latencyEl.textContent = "--";
         tokensRateEl.textContent = "--";
         totalTokensEl.textContent = "--";
@@ -26,8 +61,10 @@ function createMetricsView(elements) {
         processingTimeEl.textContent = "--";
         responseTimeEl.textContent = "--";
         progressFillEl.style.width = "0%";
+        webSearchResultsEl.textContent = "0 sources indexed";
         setStreamStatus("idle");
         streamIndicatorEl.style.opacity = "0.4";
+        resetLastRequestCost();
     }
 
     function updateFromSettings(settings) {
@@ -76,6 +113,44 @@ function createMetricsView(elements) {
         progressFillEl.style.width = `${widthPercent}%`;
     }
 
+    /**
+     * @param {{ usd: number | null, source: string, breakdown?: { promptUsd: number, completionUsd: number } }} resolution
+     * @param {number} sessionTotalUsd
+     */
+    function updateCost(resolution, sessionTotalUsd) {
+        costSessionEl.textContent = formatUsd4(sessionTotalUsd);
+
+        if (!resolution || resolution.source === "none" || resolution.usd == null) {
+            costLastEl.textContent = "—";
+            costSourceBadgeEl.hidden = true;
+            costBreakdownEl.hidden = true;
+            costDisclaimerEl.hidden = true;
+            return;
+        }
+
+        costLastEl.textContent = formatUsd4(resolution.usd);
+        costSourceBadgeEl.hidden = false;
+
+        if (resolution.source === "api") {
+            costSourceBadgeEl.textContent = "API";
+            costSourceBadgeEl.className = "cost-source-badge cost-source-badge--api";
+            costBreakdownEl.hidden = true;
+            costDisclaimerEl.hidden = true;
+            return;
+        }
+
+        costSourceBadgeEl.textContent = "Est.";
+        costSourceBadgeEl.className = "cost-source-badge";
+        costBreakdownEl.hidden = false;
+        costDisclaimerEl.hidden = false;
+
+        const b = resolution.breakdown;
+        if (b) {
+            costPromptEl.textContent = formatUsd4(b.promptUsd);
+            costCompletionEl.textContent = formatUsd4(b.completionUsd);
+        }
+    }
+
     function updateWebSources(sources) {
         const count = Array.isArray(sources) ? sources.length : 0;
         webSearchResultsEl.textContent = `${count} source${count === 1 ? "" : "s"} indexed`;
@@ -92,6 +167,8 @@ function createMetricsView(elements) {
         updateFromSettings,
         updateMetadata,
         updateUsage,
+        updateCost,
+        updateSessionCost,
         updateWebSources,
     };
 }

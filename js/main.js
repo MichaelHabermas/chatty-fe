@@ -1,4 +1,5 @@
 import { loadSettings } from "./config.js";
+import { resolveRequestCost } from "./pricing/resolveCost.js";
 import { sendChatCompletion, streamChatCompletion } from "./services/chatClient.js";
 import { createAppState, createMessage } from "./state.js";
 import { createChatView } from "./ui/chatView.js";
@@ -33,6 +34,13 @@ const dom = {
     metricProcessingTime: document.querySelector("#metric-processing-time"),
     metricResponseTime: document.querySelector("#metric-response-time"),
     metricProgressFill: document.querySelector("#metric-progress-fill"),
+    metricCostLast: document.querySelector("#metric-cost-last"),
+    metricCostSource: document.querySelector("#metric-cost-source"),
+    metricCostBreakdown: document.querySelector("#metric-cost-breakdown"),
+    metricCostPrompt: document.querySelector("#metric-cost-prompt"),
+    metricCostCompletion: document.querySelector("#metric-cost-completion"),
+    metricCostSession: document.querySelector("#metric-cost-session"),
+    metricCostDisclaimer: document.querySelector("#metric-cost-disclaimer"),
 };
 
 const initialSettings = loadSettings();
@@ -60,6 +68,13 @@ const metricsView = createMetricsView({
     processingTimeEl: dom.metricProcessingTime,
     responseTimeEl: dom.metricResponseTime,
     progressFillEl: dom.metricProgressFill,
+    costLastEl: dom.metricCostLast,
+    costSourceBadgeEl: dom.metricCostSource,
+    costBreakdownEl: dom.metricCostBreakdown,
+    costPromptEl: dom.metricCostPrompt,
+    costCompletionEl: dom.metricCostCompletion,
+    costSessionEl: dom.metricCostSession,
+    costDisclaimerEl: dom.metricCostDisclaimer,
 });
 
 createSettingsView(
@@ -84,6 +99,7 @@ createSettingsView(
 metricsView.updateFromSettings(initialSettings);
 chatView.setConnectionStatus(`ready • ${initialSettings.baseUrl}`);
 metricsView.resetDynamic();
+metricsView.updateSessionCost(state.sessionCostUsd);
 
 dom.chatForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -109,8 +125,9 @@ dom.chatForm.addEventListener("submit", async (event) => {
 
     chatView.setBusy(true);
     metricsView.resetDynamic();
-    metricsView.setStreamingActive(state.settings.streamEnabled);
+    metricsView.updateSessionCost(state.sessionCostUsd);
     metricsView.updateFromSettings(state.settings);
+    metricsView.setStreamingActive(state.settings.streamEnabled);
 
     try {
         const requestMessages = state.messages
@@ -133,6 +150,7 @@ dom.chatForm.addEventListener("submit", async (event) => {
             chatView.updateMessage(assistantHandle, result.content);
             metricsView.updateUsage(result.usage, Date.now() - state.requestStartedAt);
             metricsView.updateWebSources(result.webSources);
+            applyCost(result.usage, result.metadata, result.model);
             metricsView.setStreamingActive(false);
             return;
         }
@@ -170,6 +188,7 @@ dom.chatForm.addEventListener("submit", async (event) => {
         }
 
         metricsView.updateUsage(streamState.usage, Date.now() - state.requestStartedAt);
+        applyCost(streamState.usage, result.metadata, streamResult.model);
         metricsView.setStreamingActive(false);
     } catch (error) {
         const errorMessage = mapErrorMessage(error);
@@ -184,6 +203,14 @@ dom.chatForm.addEventListener("submit", async (event) => {
         chatView.setBusy(false);
     }
 });
+
+function applyCost(usage, metadata, model) {
+    const resolution = resolveRequestCost({ usage, metadata, model });
+    if (resolution.usd != null && resolution.source !== "none") {
+        state.sessionCostUsd += resolution.usd;
+    }
+    metricsView.updateCost(resolution, state.sessionCostUsd);
+}
 
 function mapErrorMessage(error) {
     const message = String(error?.message || "");
