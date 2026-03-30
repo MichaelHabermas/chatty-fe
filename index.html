@@ -68,9 +68,14 @@
 
         <aside class="metrics-panel" id="metrics-panel" aria-label="Request metrics">
             <header class="metrics-panel__header">
-                <h2 class="metrics-panel__title">Telemetry</h2>
+                <div class="metrics-panel__title-row">
+                    <h2 class="metrics-panel__title">Telemetry</h2>
+                    <div class="metrics-panel__actions">
+                        <button type="button" class="metrics-debug-bundle-btn" id="copy-debug-bundle-btn" disabled>Copy debug bundle</button>
+                    </div>
+                </div>
                 <p class="metrics-panel__subtitle">Observability for this session · click an assistant reply to inspect</p>
-                <p class="metrics-panel__view" id="telemetry-view-label" hidden></p>
+                <p class="metrics-panel__view metrics-panel__view--live" id="telemetry-view-label" aria-hidden="true"></p>
             </header>
 
             <div class="metric-group">

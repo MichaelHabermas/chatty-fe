@@ -185,13 +185,16 @@ function createMetricsView(elements) {
             return;
         }
         if (mode === "history") {
-            telemetryViewLabelEl.hidden = false;
+            telemetryViewLabelEl.classList.remove("metrics-panel__view--live");
+            telemetryViewLabelEl.removeAttribute("aria-hidden");
             telemetryViewLabelEl.textContent = "Inspecting a past assistant reply";
         } else if (mode === "empty") {
-            telemetryViewLabelEl.hidden = false;
+            telemetryViewLabelEl.classList.remove("metrics-panel__view--live");
+            telemetryViewLabelEl.removeAttribute("aria-hidden");
             telemetryViewLabelEl.textContent = "No requests yet";
         } else {
-            telemetryViewLabelEl.hidden = true;
+            telemetryViewLabelEl.classList.add("metrics-panel__view--live");
+            telemetryViewLabelEl.setAttribute("aria-hidden", "true");
             telemetryViewLabelEl.textContent = "";
         }
     }

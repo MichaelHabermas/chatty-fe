@@ -49,3 +49,19 @@ The sidebar matches **the turn you’re reading**, not only the latest reply.
 ### Docs
 
 `js/telemetry/`, `js/storage/`, `js/ui/metricsView.js`, `js/ui/chatView.js`.
+
+---
+
+## Debug bundle (chatty-fe)
+
+### Added
+
+**Copy debug bundle** in the Telemetry header copies a **Markdown** snippet to the clipboard: redacted JSON (backend origin + path, `request_body` matching the client payload shape, full telemetry snapshot for the **selected or latest** completed turn), a **`body.json`** block for safe `curl`, and a **`curl`** example using `YOUR_API_KEY` and `--data-binary @body.json`. Disabled while streaming or when there is no completed assistant snapshot.
+
+### Why
+
+Paste-ready repro material for **chatty-be** issues without exposing secrets or retyping CORS notes.
+
+### Docs
+
+`js/telemetry/debugBundle.js`, `js/main.js`.

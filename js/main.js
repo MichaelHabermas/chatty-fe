@@ -1,7 +1,8 @@
-import { loadSettings } from "./config.js";
+import { CHAT_COMPLETIONS_PATH, DEFAULT_MODEL, loadSettings } from "./config.js";
 import { resolveRequestCost } from "./pricing/resolveCost.js";
 import { loadThread, saveThread } from "./storage/threadPersistence.js";
 import { sendChatCompletion, streamChatCompletion } from "./services/chatClient.js";
+import { buildDebugBundleMarkdown, canExportDebugBundle } from "./telemetry/debugBundle.js";
 import { buildTelemetrySnapshot } from "./telemetry/snapshot.js";
 import { createAppState, createMessage } from "./state.js";
 import { createChatView } from "./ui/chatView.js";
@@ -45,6 +46,7 @@ const dom = {
     metricCostDisclaimer: document.querySelector("#metric-cost-disclaimer"),
     metricsPanel: document.querySelector("#metrics-panel"),
     telemetryViewLabel: document.querySelector("#telemetry-view-label"),
+    copyDebugBundleBtn: document.querySelector("#copy-debug-bundle-btn"),
 };
 
 const initialSettings = loadSettings();
@@ -137,37 +139,42 @@ function getLastAssistantSnapshotId(messages) {
     return null;
 }
 
+function updateDebugBundleButton() {
+    if (!dom.copyDebugBundleBtn) {
+        return;
+    }
+    dom.copyDebugBundleBtn.disabled = !canExportDebugBundle(state);
+}
+
 function applyTelemetryView() {
     if (state.isStreaming) {
         metricsView.setTelemetryViewMode("live");
         chatView.setTelemetrySelection(null);
-        return;
-    }
+    } else {
+        const lastId = getLastAssistantSnapshotId(state.messages);
+        if (!lastId) {
+            resetMetricsToSessionBaseline();
+            metricsView.setTelemetryViewMode("empty");
+            chatView.setTelemetrySelection(null);
+        } else {
+            let targetId = state.telemetrySelectionId;
+            if (!targetId || !state.messages.some((m) => m.id === targetId && m.telemetrySnapshot)) {
+                targetId = lastId;
+            }
 
-    const lastId = getLastAssistantSnapshotId(state.messages);
-    if (!lastId) {
-        resetMetricsToSessionBaseline();
-        metricsView.setTelemetryViewMode("empty");
-        chatView.setTelemetrySelection(null);
-        return;
+            const msg = state.messages.find((m) => m.id === targetId);
+            const snapshot = msg?.telemetrySnapshot;
+            if (!snapshot || snapshot.v !== 1) {
+                resetMetricsToSessionBaseline();
+            } else {
+                metricsView.hydrateFromSnapshot(snapshot, state.sessionCostUsd);
+                const viewingHistory = targetId !== lastId;
+                metricsView.setTelemetryViewMode(viewingHistory ? "history" : "live");
+                chatView.setTelemetrySelection(viewingHistory ? targetId : null);
+            }
+        }
     }
-
-    let targetId = state.telemetrySelectionId;
-    if (!targetId || !state.messages.some((m) => m.id === targetId && m.telemetrySnapshot)) {
-        targetId = lastId;
-    }
-
-    const msg = state.messages.find((m) => m.id === targetId);
-    const snapshot = msg?.telemetrySnapshot;
-    if (!snapshot || snapshot.v !== 1) {
-        resetMetricsToSessionBaseline();
-        return;
-    }
-
-    metricsView.hydrateFromSnapshot(snapshot, state.sessionCostUsd);
-    const viewingHistory = targetId !== lastId;
-    metricsView.setTelemetryViewMode(viewingHistory ? "history" : "live");
-    chatView.setTelemetrySelection(viewingHistory ? targetId : null);
+    updateDebugBundleButton();
 }
 
 function restorePersistedThread() {
@@ -239,15 +246,31 @@ chatView.setOnAssistantSelect((id) => {
     persistSession();
 });
 
+dom.copyDebugBundleBtn?.addEventListener("click", async () => {
+    const btn = dom.copyDebugBundleBtn;
+    const text = buildDebugBundleMarkdown(state, {
+        baseUrl: state.settings.baseUrl,
+        completionsPath: CHAT_COMPLETIONS_PATH,
+        defaultModel: DEFAULT_MODEL,
+    });
+    if (!text || !btn) {
+        return;
+    }
+    try {
+        await navigator.clipboard.writeText(text);
+        const label = btn.textContent;
+        btn.textContent = "Copied";
+        setTimeout(() => {
+            btn.textContent = label;
+        }, 1800);
+    } catch {
+        chatView.setConnectionStatus("clipboard unavailable");
+    }
+});
+
 restorePersistedThread();
-if (state.messages.length === 0) {
-    metricsView.resetDynamic();
-    metricsView.updateSessionCost(state.sessionCostUsd);
-    metricsView.setTelemetryViewMode("empty");
-} else {
-    metricsView.updateSessionCost(state.sessionCostUsd);
-    applyTelemetryView();
-}
+metricsView.updateSessionCost(state.sessionCostUsd);
+applyTelemetryView();
 
 dom.chatForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -273,6 +296,7 @@ dom.chatForm.addEventListener("submit", async (event) => {
     state.isStreaming = true;
     state.requestStartedAt = Date.now();
     state.abortController = new AbortController();
+    updateDebugBundleButton();
 
     chatView.setBusy(true);
     chatView.setAssistantInteractionEnabled(false);
