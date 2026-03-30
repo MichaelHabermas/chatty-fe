@@ -7,14 +7,16 @@ function createAppState(initialSettings) {
         requestStartedAt: null,
         abortController: null,
         sessionCostUsd: 0,
+        telemetrySelectionId: null,
     };
 }
 
-function createMessage(role, content) {
+function createMessage(role, content, extra = {}) {
     return {
-        id: `${role}_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
+        id: extra.id ?? `${role}_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
         role,
         content,
+        telemetrySnapshot: extra.telemetrySnapshot ?? null,
     };
 }
 

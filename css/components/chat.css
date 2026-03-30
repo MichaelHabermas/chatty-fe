@@ -161,6 +161,31 @@
     color: var(--text-primary);
 }
 
+.message--assistant-selectable {
+    cursor: pointer;
+    outline: none;
+}
+
+.message--assistant-selectable:hover .message-content {
+    border-color: rgba(0, 240, 255, 0.45);
+    box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.15);
+}
+
+.message--assistant-selectable:focus-visible .message-content {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.25);
+}
+
+.message--telemetry-selected .message-content {
+    border-color: rgba(0, 240, 255, 0.65);
+    box-shadow: 0 0 16px rgba(0, 240, 255, 0.12);
+}
+
+.messages--telemetry-disabled .message--assistant-selectable {
+    pointer-events: none;
+    opacity: 0.65;
+}
+
 .message.user .message-content {
     background: rgba(0, 240, 255, 0.15);
     border: 1px solid var(--accent-cyan);

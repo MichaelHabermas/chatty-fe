@@ -10,6 +10,18 @@ function formatUsd4(value) {
     }).format(value);
 }
 
+function groqTimingMsFromTimings(timings) {
+    if (!timings || typeof timings !== "object") {
+        return { processing: undefined, response: undefined };
+    }
+    const processing = timings.groq;
+    const response = timings["groq-ttfb"];
+    return {
+        processing: typeof processing === "number" ? processing : undefined,
+        response: typeof response === "number" ? response : undefined,
+    };
+}
+
 function createMetricsView(elements) {
     const {
         modelEl,
@@ -31,6 +43,8 @@ function createMetricsView(elements) {
         costCompletionEl,
         costSessionEl,
         costDisclaimerEl,
+        panelEl,
+        telemetryViewLabelEl,
     } = elements;
 
     function resetLastRequestCost() {
@@ -83,13 +97,12 @@ function createMetricsView(elements) {
             requestIdValueEl.textContent = metadata.requestId;
         }
 
-        const groqTiming = metadata?.timings?.groq;
-        const ttfbTiming = metadata?.timings?.["groq-ttfb"];
-        if (typeof groqTiming === "number") {
-            processingTimeEl.textContent = `${Math.round(groqTiming)}ms`;
+        const { processing, response } = groqTimingMsFromTimings(metadata?.timings);
+        if (processing !== undefined) {
+            processingTimeEl.textContent = `${Math.round(processing)}ms`;
         }
-        if (typeof ttfbTiming === "number") {
-            responseTimeEl.textContent = `${Math.round(ttfbTiming)}ms`;
+        if (response !== undefined) {
+            responseTimeEl.textContent = `${Math.round(response)}ms`;
         }
     }
 
@@ -153,7 +166,83 @@ function createMetricsView(elements) {
 
     function updateWebSources(sources) {
         const count = Array.isArray(sources) ? sources.length : 0;
-        webSearchResultsEl.textContent = `${count} source${count === 1 ? "" : "s"} indexed`;
+        setWebSourceCount(count);
+    }
+
+    function setWebSourceCount(count) {
+        const n = typeof count === "number" && count >= 0 ? count : 0;
+        webSearchResultsEl.textContent = `${n} source${n === 1 ? "" : "s"} indexed`;
+    }
+
+    /**
+     * @param {"live" | "history" | "empty"} mode
+     */
+    function setTelemetryViewMode(mode) {
+        if (panelEl) {
+            panelEl.classList.toggle("metrics-panel--history", mode === "history");
+        }
+        if (!telemetryViewLabelEl) {
+            return;
+        }
+        if (mode === "history") {
+            telemetryViewLabelEl.hidden = false;
+            telemetryViewLabelEl.textContent = "Inspecting a past assistant reply";
+        } else if (mode === "empty") {
+            telemetryViewLabelEl.hidden = false;
+            telemetryViewLabelEl.textContent = "No requests yet";
+        } else {
+            telemetryViewLabelEl.hidden = true;
+            telemetryViewLabelEl.textContent = "";
+        }
+    }
+
+    /**
+     * Replay Telemetry from a stored assistant-turn snapshot.
+     * @param {object} snapshot
+     * @param {number} sessionCostUsd
+     */
+    function hydrateFromSnapshot(snapshot, sessionCostUsd) {
+        if (!snapshot || snapshot.v !== 1) {
+            resetDynamic();
+            updateSessionCost(sessionCostUsd);
+            return;
+        }
+
+        const meta = snapshot.metadata || {};
+        const timings = meta.timings && typeof meta.timings === "object" ? meta.timings : {};
+        const { processing, response } = groqTimingMsFromTimings(timings);
+
+        modelEl.textContent = snapshot.model || "--";
+        if (meta.latencyMs != null && Number.isFinite(meta.latencyMs)) {
+            latencyEl.textContent = String(Math.max(0, Math.round(meta.latencyMs)));
+        } else {
+            latencyEl.textContent = "--";
+        }
+        requestIdValueEl.textContent = meta.requestId || "--";
+
+        processingTimeEl.textContent = processing !== undefined ? `${Math.round(processing)}ms` : "--";
+        responseTimeEl.textContent = response !== undefined ? `${Math.round(response)}ms` : "--";
+
+        const resolution = snapshot.resolution || { usd: null, source: "none" };
+        updateCost(resolution, sessionCostUsd);
+
+        if (snapshot.usage && typeof snapshot.usage === "object") {
+            updateUsage(snapshot.usage, snapshot.durationMs ?? 0);
+        } else {
+            totalTokensEl.textContent = "--";
+            tokensRateEl.textContent = "--";
+            progressFillEl.style.width = "0%";
+        }
+
+        setWebSourceCount(snapshot.webSourcesCount ?? 0);
+
+        webSearchEl.textContent = snapshot.webSearchMode ?? "auto";
+        streamIndicatorEl.style.opacity = "0.4";
+        if (snapshot.error) {
+            setStreamStatus("failed");
+        } else {
+            setStreamStatus("idle");
+        }
     }
 
     function setStreamingActive(active) {
@@ -170,6 +259,9 @@ function createMetricsView(elements) {
         updateCost,
         updateSessionCost,
         updateWebSources,
+        setWebSourceCount,
+        hydrateFromSnapshot,
+        setTelemetryViewMode,
     };
 }
 

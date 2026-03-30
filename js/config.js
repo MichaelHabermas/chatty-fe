@@ -3,6 +3,7 @@ const CHAT_COMPLETIONS_PATH = "/v1/chat/completions";
 const DEFAULT_MODEL = "llama-3.3-70b-versatile";
 
 const SETTINGS_STORAGE_KEY = "chatty.fe.settings";
+const THREAD_STORAGE_KEY = "chatty.fe.thread.v1";
 
 const DEFAULT_SETTINGS = {
     baseUrl: DEFAULT_BASE_URL,
@@ -94,4 +95,5 @@ export {
     resetSettings,
     sanitizeSettings,
     saveSettings,
+    THREAD_STORAGE_KEY,
 };

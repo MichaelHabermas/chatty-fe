@@ -1,6 +1,8 @@
 import { loadSettings } from "./config.js";
 import { resolveRequestCost } from "./pricing/resolveCost.js";
+import { loadThread, saveThread } from "./storage/threadPersistence.js";
 import { sendChatCompletion, streamChatCompletion } from "./services/chatClient.js";
+import { buildTelemetrySnapshot } from "./telemetry/snapshot.js";
 import { createAppState, createMessage } from "./state.js";
 import { createChatView } from "./ui/chatView.js";
 import { createMetricsView } from "./ui/metricsView.js";
@@ -41,6 +43,8 @@ const dom = {
     metricCostCompletion: document.querySelector("#metric-cost-completion"),
     metricCostSession: document.querySelector("#metric-cost-session"),
     metricCostDisclaimer: document.querySelector("#metric-cost-disclaimer"),
+    metricsPanel: document.querySelector("#metrics-panel"),
+    telemetryViewLabel: document.querySelector("#telemetry-view-label"),
 };
 
 const initialSettings = loadSettings();
@@ -75,7 +79,131 @@ const metricsView = createMetricsView({
     costCompletionEl: dom.metricCostCompletion,
     costSessionEl: dom.metricCostSession,
     costDisclaimerEl: dom.metricCostDisclaimer,
+    panelEl: dom.metricsPanel,
+    telemetryViewLabelEl: dom.telemetryViewLabel,
 });
+
+function messageToPersisted(m) {
+    return {
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        telemetrySnapshot: m.telemetrySnapshot ?? null,
+    };
+}
+
+function validatePersistedMessage(raw) {
+    if (!raw || typeof raw !== "object") {
+        return null;
+    }
+    if (typeof raw.id !== "string" || raw.id.length === 0) {
+        return null;
+    }
+    if (raw.role !== "user" && raw.role !== "assistant") {
+        return null;
+    }
+    if (typeof raw.content !== "string") {
+        return null;
+    }
+    return {
+        id: raw.id,
+        role: raw.role,
+        content: raw.content,
+        telemetrySnapshot: raw.telemetrySnapshot ?? null,
+    };
+}
+
+function persistSession() {
+    saveThread({
+        messages: state.messages.map(messageToPersisted),
+        sessionCostUsd: state.sessionCostUsd,
+        telemetrySelectionId: state.telemetrySelectionId,
+    });
+}
+
+function resetMetricsToSessionBaseline() {
+    metricsView.resetDynamic();
+    metricsView.updateSessionCost(state.sessionCostUsd);
+    metricsView.updateFromSettings(state.settings);
+}
+
+function getLastAssistantSnapshotId(messages) {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+        const m = messages[i];
+        if (m.role === "assistant" && m.telemetrySnapshot) {
+            return m.id;
+        }
+    }
+    return null;
+}
+
+function applyTelemetryView() {
+    if (state.isStreaming) {
+        metricsView.setTelemetryViewMode("live");
+        chatView.setTelemetrySelection(null);
+        return;
+    }
+
+    const lastId = getLastAssistantSnapshotId(state.messages);
+    if (!lastId) {
+        resetMetricsToSessionBaseline();
+        metricsView.setTelemetryViewMode("empty");
+        chatView.setTelemetrySelection(null);
+        return;
+    }
+
+    let targetId = state.telemetrySelectionId;
+    if (!targetId || !state.messages.some((m) => m.id === targetId && m.telemetrySnapshot)) {
+        targetId = lastId;
+    }
+
+    const msg = state.messages.find((m) => m.id === targetId);
+    const snapshot = msg?.telemetrySnapshot;
+    if (!snapshot || snapshot.v !== 1) {
+        resetMetricsToSessionBaseline();
+        return;
+    }
+
+    metricsView.hydrateFromSnapshot(snapshot, state.sessionCostUsd);
+    const viewingHistory = targetId !== lastId;
+    metricsView.setTelemetryViewMode(viewingHistory ? "history" : "live");
+    chatView.setTelemetrySelection(viewingHistory ? targetId : null);
+}
+
+function restorePersistedThread() {
+    const persisted = loadThread();
+    if (!persisted || !Array.isArray(persisted.messages) || persisted.messages.length === 0) {
+        return;
+    }
+
+    const nextMessages = [];
+    for (const raw of persisted.messages) {
+        const m = validatePersistedMessage(raw);
+        if (m) {
+            nextMessages.push(createMessage(m.role, m.content, { id: m.id, telemetrySnapshot: m.telemetrySnapshot }));
+        }
+    }
+    if (nextMessages.length === 0) {
+        return;
+    }
+
+    state.messages = nextMessages;
+    state.sessionCostUsd = typeof persisted.sessionCostUsd === "number" ? persisted.sessionCostUsd : 0;
+    state.telemetrySelectionId =
+        typeof persisted.telemetrySelectionId === "string" ? persisted.telemetrySelectionId : null;
+
+    if (state.telemetrySelectionId && !state.messages.some((m) => m.id === state.telemetrySelectionId)) {
+        state.telemetrySelectionId = null;
+    }
+
+    chatView.clearThreadDom();
+    for (const m of state.messages) {
+        chatView.addMessage(m.role, m.content, {
+            id: m.id,
+            selectable: m.role === "assistant" && Boolean(m.telemetrySnapshot),
+        });
+    }
+}
 
 createSettingsView(
     {
@@ -93,13 +221,33 @@ createSettingsView(
         state.settings = nextSettings;
         metricsView.updateFromSettings(nextSettings);
         chatView.setConnectionStatus(`ready • ${nextSettings.baseUrl}`);
+        applyTelemetryView();
     },
 );
 
 metricsView.updateFromSettings(initialSettings);
 chatView.setConnectionStatus(`ready • ${initialSettings.baseUrl}`);
-metricsView.resetDynamic();
-metricsView.updateSessionCost(state.sessionCostUsd);
+
+chatView.setOnAssistantSelect((id) => {
+    const lastId = getLastAssistantSnapshotId(state.messages);
+    if (id === lastId) {
+        state.telemetrySelectionId = null;
+    } else {
+        state.telemetrySelectionId = id;
+    }
+    applyTelemetryView();
+    persistSession();
+});
+
+restorePersistedThread();
+if (state.messages.length === 0) {
+    metricsView.resetDynamic();
+    metricsView.updateSessionCost(state.sessionCostUsd);
+    metricsView.setTelemetryViewMode("empty");
+} else {
+    metricsView.updateSessionCost(state.sessionCostUsd);
+    applyTelemetryView();
+}
 
 dom.chatForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -109,25 +257,28 @@ dom.chatForm.addEventListener("submit", async (event) => {
         return;
     }
 
+    state.telemetrySelectionId = null;
+
     const userMessage = createMessage("user", prompt);
     state.messages.push(userMessage);
     chatView.addMessage("user", prompt);
     chatView.clearInput();
     chatView.focusInput();
 
-    const assistantHandle = chatView.addMessage("assistant", "");
     const assistantMessage = createMessage("assistant", "");
     state.messages.push(assistantMessage);
+    const assistantHandle = chatView.addMessage("assistant", "", { id: assistantMessage.id });
+    persistSession();
     state.currentAssistantMessageId = assistantMessage.id;
     state.isStreaming = true;
     state.requestStartedAt = Date.now();
     state.abortController = new AbortController();
 
     chatView.setBusy(true);
-    metricsView.resetDynamic();
-    metricsView.updateSessionCost(state.sessionCostUsd);
-    metricsView.updateFromSettings(state.settings);
+    chatView.setAssistantInteractionEnabled(false);
+    resetMetricsToSessionBaseline();
     metricsView.setStreamingActive(state.settings.streamEnabled);
+    metricsView.setTelemetryViewMode("live");
 
     try {
         const requestMessages = state.messages
@@ -148,9 +299,22 @@ dom.chatForm.addEventListener("submit", async (event) => {
         if (result.type === "complete") {
             assistantMessage.content = result.content;
             chatView.updateMessage(assistantHandle, result.content);
-            metricsView.updateUsage(result.usage, Date.now() - state.requestStartedAt);
+            const durationMs = Date.now() - state.requestStartedAt;
+            metricsView.updateUsage(result.usage, durationMs);
             metricsView.updateWebSources(result.webSources);
-            applyCost(result.usage, result.metadata, result.model);
+            const resolution = applyCost(result.usage, result.metadata, result.model);
+            assistantMessage.telemetrySnapshot = buildTelemetrySnapshot({
+                model: result.model,
+                metadata: result.metadata,
+                usage: result.usage,
+                durationMs,
+                resolution,
+                webSources: result.webSources,
+                webSearchMode: state.settings.webSearchMode,
+                streamEnabled: state.settings.streamEnabled,
+                error: false,
+            });
+            persistSession();
             metricsView.setStreamingActive(false);
             return;
         }
@@ -187,20 +351,48 @@ dom.chatForm.addEventListener("submit", async (event) => {
             chatView.updateMessage(assistantHandle, fallback);
         }
 
-        metricsView.updateUsage(streamState.usage, Date.now() - state.requestStartedAt);
-        applyCost(streamState.usage, result.metadata, streamResult.model);
+        const durationMs = Date.now() - state.requestStartedAt;
+        metricsView.updateUsage(streamState.usage, durationMs);
+        const resolution = applyCost(streamState.usage, result.metadata, streamResult.model);
+        assistantMessage.telemetrySnapshot = buildTelemetrySnapshot({
+            model: streamResult.model || undefined,
+            metadata: result.metadata,
+            usage: streamState.usage,
+            durationMs,
+            resolution,
+            webSources: streamState.webSources,
+            webSearchMode: state.settings.webSearchMode,
+            streamEnabled: state.settings.streamEnabled,
+            error: false,
+        });
+        persistSession();
         metricsView.setStreamingActive(false);
     } catch (error) {
         const errorMessage = mapErrorMessage(error);
         assistantMessage.content = errorMessage;
         chatView.updateMessage(assistantHandle, errorMessage);
         chatView.setConnectionStatus("request failed");
+        const resolution = { usd: null, source: "none" };
+        assistantMessage.telemetrySnapshot = buildTelemetrySnapshot({
+            model: null,
+            metadata: { requestId: "", latencyMs: null, timings: {}, costUsd: null },
+            usage: null,
+            durationMs: 0,
+            resolution,
+            webSources: [],
+            webSearchMode: state.settings.webSearchMode,
+            streamEnabled: state.settings.streamEnabled,
+            error: true,
+        });
+        persistSession();
         metricsView.setStreamingActive(false);
     } finally {
         state.isStreaming = false;
         state.abortController = null;
         state.currentAssistantMessageId = null;
         chatView.setBusy(false);
+        chatView.setAssistantInteractionEnabled(true);
+        applyTelemetryView();
     }
 });
 
@@ -210,6 +402,7 @@ function applyCost(usage, metadata, model) {
         state.sessionCostUsd += resolution.usd;
     }
     metricsView.updateCost(resolution, state.sessionCostUsd);
+    return resolution;
 }
 
 function mapErrorMessage(error) {

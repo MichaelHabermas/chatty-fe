@@ -1,6 +1,10 @@
 function createChatView(elements) {
     const { messagesEl, inputEl, sendBtnEl, hintEl, emptyStateEl, connectionStatusEl } = elements;
 
+    /** @type {Map<string, HTMLElement>} */
+    const assistantNodesById = new Map();
+    let onAssistantSelect = null;
+
     function scrollToBottom() {
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
@@ -21,7 +25,42 @@ function createChatView(elements) {
         connectionStatusEl.textContent = text;
     }
 
-    function addMessage(role, content) {
+    function setAssistantInteractionEnabled(enabled) {
+        messagesEl.classList.toggle("messages--telemetry-disabled", !enabled);
+    }
+
+    function setTelemetrySelection(selectedId) {
+        for (const [id, node] of assistantNodesById) {
+            node.classList.toggle("message--telemetry-selected", id === selectedId);
+        }
+    }
+
+    function bindAssistantNode(node, id) {
+        assistantNodesById.set(id, node);
+        node.classList.add("message--assistant-selectable");
+        node.tabIndex = 0;
+        node.setAttribute("role", "button");
+        node.setAttribute("aria-label", "Show telemetry for this reply");
+
+        function activate() {
+            onAssistantSelect?.(id);
+        }
+
+        node.addEventListener("click", activate);
+        node.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                activate();
+            }
+        });
+    }
+
+    /**
+     * @param {"user" | "assistant"} role
+     * @param {string} content
+     * @param {{ id?: string, selectable?: boolean }} [options]
+     */
+    function addMessage(role, content, options = {}) {
         removeEmptyState();
         const node = document.createElement("div");
         node.className = `message ${role}`;
@@ -34,9 +73,15 @@ function createChatView(elements) {
         messagesEl.appendChild(node);
         scrollToBottom();
 
+        const id = options.id;
+        if (role === "assistant" && id && options.selectable !== false) {
+            bindAssistantNode(node, id);
+        }
+
         return {
             node,
             contentNode,
+            id,
         };
     }
 
@@ -56,6 +101,18 @@ function createChatView(elements) {
         inputEl.focus();
     }
 
+    function clearThreadDom() {
+        messagesEl.replaceChildren();
+        assistantNodesById.clear();
+    }
+
+    /**
+     * @param {(id: string) => void} handler
+     */
+    function setOnAssistantSelect(handler) {
+        onAssistantSelect = handler;
+    }
+
     return {
         addMessage,
         clearInput,
@@ -63,6 +120,10 @@ function createChatView(elements) {
         setBusy,
         setConnectionStatus,
         updateMessage,
+        setAssistantInteractionEnabled,
+        setTelemetrySelection,
+        clearThreadDom,
+        setOnAssistantSelect,
     };
 }
 
