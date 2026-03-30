@@ -1,0 +1,17 @@
+.metric-value.metric-value--success {
+    color: var(--success-green);
+    text-shadow: 0 0 10px rgba(0, 217, 96, 0.35);
+}
+
+.timing-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.timing-row:first-child {
+    margin-bottom: 4px;
+}
+
+.timing-value {
+    color: var(--accent-cyan);
+}

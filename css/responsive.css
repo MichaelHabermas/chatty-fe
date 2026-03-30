@@ -1,0 +1,34 @@
+@media (max-width: 1024px) {
+    .metrics-panel {
+        width: 280px;
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .message-content {
+        max-width: 80%;
+    }
+}
+
+@media (max-width: 768px) {
+    .cockpit {
+        flex-direction: column;
+    }
+
+    .chat-panel {
+        flex: 1;
+        border-right: none;
+        border-bottom: 1px solid var(--border-dark);
+    }
+
+    .metrics-panel {
+        width: 100%;
+        height: 200px;
+        border-left: none;
+        border-top: 1px solid var(--border-dark);
+    }
+
+    .message-content {
+        max-width: 85%;
+    }
+}

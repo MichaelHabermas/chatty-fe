@@ -1,0 +1,12 @@
+:root {
+    --bg-deep: #0a0e27;
+    --bg-darker: #050810;
+    --border-dark: #1a1f3a;
+    --accent-cyan: #00f0ff;
+    --accent-cyan-glow: rgba(0, 240, 255, 0.3);
+    --accent-amber: #ffb800;
+    --text-primary: #f5f7fa;
+    --text-muted: #8b92a9;
+    --text-mono: #00f0ff;
+    --success-green: #00d960;
+}
