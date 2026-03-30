@@ -32,7 +32,7 @@
 }
 
 .metrics-panel {
-    width: 340px;
+    width: 400px;
     background: rgba(10, 14, 39, 0.8);
     backdrop-filter: blur(20px);
     border-left: 1px solid var(--border-dark);

@@ -216,6 +216,28 @@
     box-shadow: 0 0 20px rgba(0, 240, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+.metrics-panel__row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+    gap: 16px;
+    align-items: stretch;
+}
+
+.metrics-panel__row > .metric-group {
+    min-width: 0;
+}
+
+.metrics-panel__row .metric-value {
+    font-size: 18px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.metrics-panel__row .request-id {
+    word-break: break-all;
+    overflow-wrap: anywhere;
+}
+
 .metric-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;

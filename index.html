@@ -100,11 +100,6 @@
                 </div>
             </section>
 
-            <div class="metric-group">
-                <div class="metric-label">Model</div>
-                <div class="metric-value" id="metric-model">--</div>
-            </div>
-
             <div class="metric-group metric-group--cost">
                 <div class="metric-label">Cost</div>
                 <div class="metric-cost-primary">
@@ -150,60 +145,71 @@
                 </p>
             </div>
 
-            <div class="metric-group">
-                <div class="metric-label">Latency</div>
-                <div class="metric-value">
-                    <span class="latency-value" id="metric-latency">--</span><span class="metric-unit">ms</span>
+            <div class="metrics-panel__row">
+                <div class="metric-group">
+                    <div class="metric-label">Model</div>
+                    <div class="metric-value" id="metric-model">--</div>
                 </div>
-                <div class="stream-status" id="metric-stream-status">
-                    <div class="stream-indicator" id="metric-stream-indicator"></div>
-                    <span id="metric-stream-label">idle</span>
-                </div>
-            </div>
 
-            <div class="metric-group">
-                <div class="metric-label">Tokens / Second</div>
-                <div class="metric-value">
-                    <span class="tokens-value" id="metric-tokens-rate">--</span><span class="metric-unit">tok/s</span>
-                </div>
-                <div class="progress-container">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="metric-progress-fill"></div>
-                    </div>
-                    <div class="progress-label">
-                        <span>Total Tokens</span>
-                        <span id="metric-total-tokens">--</span>
+                <div class="metric-group">
+                    <div class="metric-label">Web Search</div>
+                    <div class="metric-value metric-value--success" id="metric-web-search">auto</div>
+                    <div class="info-box">
+                        <div class="info-label">Results Found</div>
+                        <span id="metric-web-search-results">0 sources indexed</span>
                     </div>
                 </div>
             </div>
 
-            <div class="metric-group">
-                <div class="metric-label">Web Search</div>
-                <div class="metric-value metric-value--success" id="metric-web-search">auto</div>
-                <div class="info-box">
-                    <div class="info-label">Results Found</div>
-                    <span id="metric-web-search-results">0 sources indexed</span>
-                </div>
-            </div>
-
-            <div class="metric-group">
-                <div class="metric-label">Request ID</div>
-                <div class="request-id" id="metric-request-id">
-                    <span class="request-id-label">UUID</span>
-                    <span id="metric-request-id-value">--</span>
-                </div>
-            </div>
-
-            <div class="metric-group">
-                <div class="metric-label">Server Timing</div>
-                <div class="info-box">
-                    <div class="timing-row">
-                        <span>Processing</span>
-                        <span class="timing-value" id="metric-processing-time">--</span>
+            <div class="metrics-panel__row">
+                <div class="metric-group">
+                    <div class="metric-label">Latency</div>
+                    <div class="metric-value">
+                        <span class="latency-value" id="metric-latency">--</span><span class="metric-unit">ms</span>
                     </div>
-                    <div class="timing-row">
-                        <span>Response</span>
-                        <span class="timing-value" id="metric-response-time">--</span>
+                    <div class="stream-status" id="metric-stream-status">
+                        <div class="stream-indicator" id="metric-stream-indicator"></div>
+                        <span id="metric-stream-label">idle</span>
+                    </div>
+                </div>
+
+                <div class="metric-group">
+                    <div class="metric-label">Tokens / Second</div>
+                    <div class="metric-value">
+                        <span class="tokens-value" id="metric-tokens-rate">--</span><span class="metric-unit">tok/s</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="metric-progress-fill"></div>
+                        </div>
+                        <div class="progress-label">
+                            <span>Total Tokens</span>
+                            <span id="metric-total-tokens">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metrics-panel__row">
+                <div class="metric-group">
+                    <div class="metric-label">Request ID</div>
+                    <div class="request-id" id="metric-request-id">
+                        <span class="request-id-label">UUID</span>
+                        <span id="metric-request-id-value">--</span>
+                    </div>
+                </div>
+
+                <div class="metric-group">
+                    <div class="metric-label">Server Timing</div>
+                    <div class="info-box">
+                        <div class="timing-row">
+                            <span>Processing</span>
+                            <span class="timing-value" id="metric-processing-time">--</span>
+                        </div>
+                        <div class="timing-row">
+                            <span>Response</span>
+                            <span class="timing-value" id="metric-response-time">--</span>
+                        </div>
                     </div>
                 </div>
             </div>
