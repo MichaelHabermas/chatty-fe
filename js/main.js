@@ -464,6 +464,8 @@ dom.chatForm.addEventListener("submit", async (event) => {
             webSources: [],
         };
 
+        chatView.setAssistantStreaming(assistantMessage.id, true);
+
         const streamResult = await streamChatCompletion(result.responseBody, {
             onTextDelta(delta) {
                 streamState.text += delta;
@@ -526,6 +528,7 @@ dom.chatForm.addEventListener("submit", async (event) => {
         persistSession();
         metricsView.setStreamingActive(false);
     } finally {
+        chatView.setAssistantStreaming(assistantMessage.id, false);
         state.isStreaming = false;
         state.abortController = null;
         state.currentAssistantMessageId = null;

@@ -41,3 +41,9 @@
         transform: translateY(0);
     }
 }
+
+@keyframes messageStreamRingRotate {
+    to {
+        transform: rotate(360deg);
+    }
+}

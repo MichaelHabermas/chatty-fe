@@ -48,6 +48,21 @@ function createChatView(elements) {
         }
     }
 
+    /**
+     * @param {string | undefined} id
+     * @param {boolean} active
+     */
+    function setAssistantStreaming(id, active) {
+        if (!id) {
+            return;
+        }
+        const node = assistantNodesById.get(id);
+        if (!node) {
+            return;
+        }
+        node.classList.toggle("message--streaming", active);
+    }
+
     function bindAssistantNode(node, id) {
         assistantNodesById.set(id, node);
         node.classList.add("message--assistant-selectable");
@@ -137,6 +152,7 @@ function createChatView(elements) {
         setAssistantInteractionEnabled,
         setTelemetrySelection,
         setCompareHighlight,
+        setAssistantStreaming,
         clearThreadDom,
         setOnAssistantSelect,
     };
