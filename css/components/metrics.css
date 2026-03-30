@@ -422,3 +422,230 @@
     color: rgba(255, 184, 0, 0.95);
     white-space: nowrap;
 }
+
+/* Compare Cards View */
+.compare-cards-container {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 8, 16, 0.95);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    animation: fadeInCompare 0.3s ease-out;
+}
+
+.compare-cards-container.active {
+    display: flex;
+}
+
+@keyframes fadeInCompare {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(8px);
+    }
+}
+
+.compare-cards-layout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    width: 100%;
+    height: 100%;
+    padding: 40px 20px;
+    position: relative;
+}
+
+.compare-cards-layout::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(0, 240, 255, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.compare-card {
+    width: 100%;
+    max-width: 380px;
+    background: rgba(10, 14, 39, 0.85);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    border-radius: 12px;
+    padding: 24px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 32px rgba(0, 240, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: auto;
+    max-height: 80vh;
+    animation: magneticSnapLeft 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+    position: relative;
+}
+
+.compare-card.right {
+    animation: magneticSnapRight 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+.compare-card.left {
+    border-color: rgba(0, 240, 255, 0.4);
+    box-shadow: 0 0 32px rgba(0, 240, 255, 0.12), inset 0 1px 0 rgba(0, 240, 255, 0.1);
+}
+
+.compare-card.right {
+    border-color: rgba(255, 120, 200, 0.35);
+    box-shadow: 0 0 32px rgba(255, 120, 200, 0.08), inset 0 1px 0 rgba(255, 120, 200, 0.08);
+}
+
+.compare-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+}
+
+.compare-card-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.compare-card.left .compare-card-label {
+    color: rgba(0, 240, 255, 0.75);
+}
+
+.compare-card.right .compare-card-label {
+    color: rgba(255, 120, 200, 0.75);
+}
+
+.compare-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.compare-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px;
+    background: rgba(26, 31, 58, 0.4);
+    border-radius: 6px;
+    border: 1px solid rgba(0, 240, 255, 0.08);
+    transition: all 0.2s ease;
+}
+
+.compare-card.right .compare-metric {
+    border-color: rgba(255, 120, 200, 0.08);
+}
+
+.compare-metric-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    flex: 1;
+}
+
+.compare-metric-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-cyan);
+    text-shadow: 0 0 6px rgba(0, 240, 255, 0.2);
+    white-space: nowrap;
+}
+
+.compare-card.right .compare-metric-value {
+    color: rgba(255, 120, 200, 0.95);
+    text-shadow: 0 0 6px rgba(255, 120, 200, 0.15);
+}
+
+.compare-cards-shimmer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 100px;
+    background: linear-gradient(
+        180deg,
+        rgba(0, 240, 255, 0) 0%,
+        rgba(0, 240, 255, 0.4) 30%,
+        rgba(255, 120, 200, 0.4) 70%,
+        rgba(255, 120, 200, 0) 100%
+    );
+    border-radius: 2px;
+    filter: blur(2px);
+    animation: pulseGlow 2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.compare-cards-delta-indicator {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: rgba(255, 184, 0, 0.85);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    opacity: 0;
+    animation: slideInDelta 0.5s ease-out 0.6s forwards;
+}
+
+@keyframes slideInDelta {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.compare-cards-close {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(26, 31, 58, 0.6);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    border-radius: 8px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.compare-cards-close:hover {
+    border-color: rgba(255, 120, 200, 0.4);
+    background: rgba(26, 31, 58, 0.8);
+    color: rgba(255, 120, 200, 0.9);
+}
+
+/* Hide table when cards are shown */
+.telemetry-diff.compare-cards-active {
+    display: none;
+}

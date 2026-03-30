@@ -9,6 +9,27 @@
 </head>
 <body>
     <div class="cockpit">
+        <!-- Compare Cards Overlay -->
+        <div class="compare-cards-container" id="compare-cards-container">
+            <button type="button" class="compare-cards-close" id="compare-cards-close" aria-label="Close comparison">ESC</button>
+            <div class="compare-cards-layout">
+                <div class="compare-card left" id="compare-card-left">
+                    <div class="compare-card-header">
+                        <div class="compare-card-label">First Response</div>
+                    </div>
+                    <div class="compare-card-content" id="compare-card-left-content"></div>
+                </div>
+                <div class="compare-cards-shimmer"></div>
+                <div class="compare-card right" id="compare-card-right">
+                    <div class="compare-card-header">
+                        <div class="compare-card-label">Second Response</div>
+                    </div>
+                    <div class="compare-card-content" id="compare-card-right-content"></div>
+                </div>
+            </div>
+            <div class="compare-cards-delta-indicator" id="compare-cards-delta-indicator">Comparison Active</div>
+        </div>
+
         <main class="chat-panel">
             <div class="chat-header">
                 <div class="chat-title">Chatty</div>

@@ -261,7 +261,53 @@ function createMetricsView(elements) {
         }
     }
 
+    function renderCompareCards(leftSnap, rightSnap) {
+        const container = document.getElementById("compare-cards-container");
+        const leftContent = document.getElementById("compare-card-left-content");
+        const rightContent = document.getElementById("compare-card-right-content");
+
+        if (!container || !leftContent || !rightContent) {
+            return;
+        }
+
+        const rows = buildDiffRows(leftSnap, rightSnap);
+        leftContent.replaceChildren();
+        rightContent.replaceChildren();
+
+        for (const row of rows) {
+            // Left card metric
+            const leftMetric = document.createElement("div");
+            leftMetric.className = "compare-metric";
+            leftMetric.innerHTML = `
+                <div class="compare-metric-name">${row.label}</div>
+                <div class="compare-metric-value">${row.a}</div>
+            `;
+            leftContent.appendChild(leftMetric);
+
+            // Right card metric
+            const rightMetric = document.createElement("div");
+            rightMetric.className = "compare-metric";
+            rightMetric.innerHTML = `
+                <div class="compare-metric-name">${row.label}</div>
+                <div class="compare-metric-value">${row.b}</div>
+            `;
+            rightContent.appendChild(rightMetric);
+        }
+
+        container.classList.add("active");
+    }
+
+    function hideCompareCards() {
+        const container = document.getElementById("compare-cards-container");
+        if (container) {
+            container.classList.remove("active");
+        }
+    }
+
     function showTelemetryDiff(leftSnap, rightSnap) {
+        renderCompareCards(leftSnap, rightSnap);
+
+        // Also keep table for fallback
         if (!telemetryDiffEl || !telemetryDiffBodyEl) {
             return;
         }
@@ -280,10 +326,11 @@ function createMetricsView(elements) {
             mk(row.delta, true);
             telemetryDiffBodyEl.appendChild(tr);
         }
-        telemetryDiffEl.hidden = false;
+        telemetryDiffEl.hidden = true;
     }
 
     function hideTelemetryDiff() {
+        hideCompareCards();
         if (telemetryDiffBodyEl) {
             telemetryDiffBodyEl.replaceChildren();
         }

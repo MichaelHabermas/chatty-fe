@@ -494,6 +494,22 @@ dom.telemetryDiffClose?.addEventListener("click", () => {
     persistSession();
 });
 
+const compareCardsClose = document.getElementById("compare-cards-close");
+const compareCardsContainer = document.getElementById("compare-cards-container");
+compareCardsClose?.addEventListener("click", () => {
+    clearTelemetryCompare();
+    applyTelemetryView();
+    persistSession();
+});
+
+compareCardsContainer?.addEventListener("click", (event) => {
+    if (event.target === compareCardsContainer) {
+        clearTelemetryCompare();
+        applyTelemetryView();
+        persistSession();
+    }
+});
+
 document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") {
         return;
