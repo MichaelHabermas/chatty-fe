@@ -1,3 +1,5 @@
+import { markdownToSafeHtml } from "../render/markdownToSafeHtml.js";
+
 function createChatView(elements) {
     const { messagesEl, inputEl, sendBtnEl, hintEl, connectionStatusEl } = elements;
     let emptyStateEl = elements.emptyStateEl;
@@ -89,6 +91,7 @@ function createChatView(elements) {
      * @param {"user" | "assistant"} role
      * @param {string} content
      * @param {{ id?: string, selectable?: boolean }} [options]
+     * @returns {{ node: HTMLElement, contentNode: HTMLElement, id: string | undefined, role: "user" | "assistant" }}
      */
     function addMessage(role, content, options = {}) {
         removeEmptyState();
@@ -97,7 +100,11 @@ function createChatView(elements) {
 
         const contentNode = document.createElement("div");
         contentNode.className = "message-content";
-        contentNode.textContent = content;
+        if (role === "assistant") {
+            contentNode.innerHTML = markdownToSafeHtml(content);
+        } else {
+            contentNode.textContent = content;
+        }
 
         node.appendChild(contentNode);
         messagesEl.appendChild(node);
@@ -112,6 +119,7 @@ function createChatView(elements) {
             node,
             contentNode,
             id,
+            role,
         };
     }
 
@@ -119,7 +127,11 @@ function createChatView(elements) {
         if (!messageHandle?.contentNode) {
             return;
         }
-        messageHandle.contentNode.textContent = content;
+        if (messageHandle.role === "assistant") {
+            messageHandle.contentNode.innerHTML = markdownToSafeHtml(content);
+        } else {
+            messageHandle.contentNode.textContent = content;
+        }
         scrollToBottom();
     }
 

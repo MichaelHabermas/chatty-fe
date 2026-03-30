@@ -1,0 +1,116 @@
+/* Message Vitals Sidecars */
+
+.message.assistant {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.message.assistant:has(> .vitals-card) > .message-content {
+    flex: 0 1 auto;
+}
+
+.vitals-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 70px;
+    padding: 8px;
+    background: rgba(10, 14, 39, 0.7);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    border-radius: 6px;
+    backdrop-filter: blur(12px);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    animation: vitalsSlideIn 0.3s ease-out;
+    box-shadow: 0 0 16px rgba(0, 240, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+    align-self: flex-start;
+}
+
+@keyframes vitalsSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.vitals__metric {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 0;
+}
+
+.vitals__metric-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    opacity: 0.7;
+    color: var(--text-muted);
+}
+
+.vitals__metric-value {
+    flex: 1;
+    min-width: 0;
+    color: var(--accent-cyan);
+    text-shadow: 0 0 6px rgba(0, 240, 255, 0.2);
+    font-weight: 600;
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.vitals__metric--cost .vitals__metric-value {
+    color: var(--accent-amber);
+    text-shadow: 0 0 8px rgba(255, 184, 0, 0.25);
+}
+
+.vitals__metric--inactive .vitals__metric-value {
+    opacity: 0.5;
+    color: var(--text-muted);
+    text-shadow: none;
+}
+
+/* Compare state: dual cards */
+.message--compare-left .vitals-card,
+.message--compare-right .vitals-card {
+    background: rgba(10, 14, 39, 0.85);
+}
+
+.message--compare-left .vitals-card {
+    border-color: rgba(0, 240, 255, 0.4);
+    box-shadow: 0 0 16px rgba(0, 240, 255, 0.15), inset 0 1px 0 rgba(0, 240, 255, 0.1);
+}
+
+.message--compare-right .vitals-card {
+    border-color: rgba(255, 120, 200, 0.35);
+    box-shadow: 0 0 16px rgba(255, 120, 200, 0.1), inset 0 1px 0 rgba(255, 120, 200, 0.08);
+}
+
+.message--compare-right .vitals__metric-value {
+    color: rgba(255, 120, 200, 0.95);
+    text-shadow: 0 0 8px rgba(255, 120, 200, 0.2);
+}
+
+/* Message wrapper for vitals card */
+.message-with-vitals {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.message-with-vitals > .message-content {
+    flex: 1;
+    min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vitals-card {
+        animation: none;
+    }
+}

@@ -10,6 +10,7 @@ import { createCompareConstellation } from "./ui/compareConstellation.js";
 import { createChatView } from "./ui/chatView.js";
 import { createMetricsView } from "./ui/metricsView.js";
 import { createSettingsView } from "./ui/settingsView.js";
+import { createVitalsCardManager } from "./ui/vitalsCard.js";
 
 const dom = {
     chatForm: document.querySelector("#chat-form"),
@@ -74,6 +75,26 @@ const compareConstellation = createCompareConstellation({
     getAssistantNode: (id) => chatView.getAssistantNode(id),
 });
 
+const vitalsCardManager = createVitalsCardManager({
+    messagesEl: dom.messages,
+    getMessageMetrics: (messageId) => {
+        const message = state.messages.find((m) => m.id === messageId);
+        if (!message || !message.telemetrySnapshot) {
+            return null;
+        }
+        const snap = message.telemetrySnapshot;
+        const latency = snap.metadata?.latencyMs ?? snap.durationMs;
+        const tokensOut = snap.usage?.completion_tokens ?? 0;
+        const tokensPerSecond = latency > 0 ? (tokensOut / latency) * 1000 : 0;
+        return {
+            latency,
+            tokensPerSecond,
+            webSearchUsed: snap.webSourcesCount > 0,
+            cost: snap.resolution?.usd || 0,
+        };
+    },
+});
+
 function syncCompareConstellation() {
     if (state.isStreaming || !state.telemetryComparePair) {
         compareConstellation.sync(null);
@@ -83,6 +104,46 @@ function syncCompareConstellation() {
         left: state.telemetryComparePair.left,
         right: state.telemetryComparePair.right,
     });
+}
+
+function syncVitalsCards() {
+    vitalsCardManager.clearAll();
+
+    if (state.isStreaming) {
+        return;
+    }
+
+    // Show vitals for compare mode
+    if (state.telemetryComparePair) {
+        const leftMsg = state.messages.find((m) => m.id === state.telemetryComparePair.left);
+        const rightMsg = state.messages.find((m) => m.id === state.telemetryComparePair.right);
+
+        if (leftMsg) {
+            const leftNode = chatView.getAssistantNode(leftMsg.id);
+            if (leftNode) {
+                vitalsCardManager.render(leftNode, leftMsg.id);
+            }
+        }
+
+        if (rightMsg) {
+            const rightNode = chatView.getAssistantNode(rightMsg.id);
+            if (rightNode) {
+                vitalsCardManager.render(rightNode, rightMsg.id);
+            }
+        }
+        return;
+    }
+
+    // Show vitals for single selection
+    if (state.telemetrySelectionId) {
+        const msg = state.messages.find((m) => m.id === state.telemetrySelectionId);
+        if (msg) {
+            const node = chatView.getAssistantNode(msg.id);
+            if (node) {
+                vitalsCardManager.render(node, msg.id);
+            }
+        }
+    }
 }
 
 const metricsView = createMetricsView({
@@ -212,6 +273,7 @@ function resetChat() {
     chatView.setAssistantInteractionEnabled(true);
     chatView.setTelemetrySelection(null);
     chatView.setCompareHighlight({ pendingId: null, leftId: null, rightId: null });
+    vitalsCardManager.clearAll();
     persistSession();
     applyTelemetryView();
 }
@@ -298,6 +360,7 @@ function applyTelemetryView() {
         refreshSessionSparkline();
     } finally {
         syncCompareConstellation();
+        syncVitalsCards();
         updateChatResetButton();
     }
 }
