@@ -40,6 +40,13 @@
     margin-top: 4px;
 }
 
+.chat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
 .settings-btn {
     border: 1px solid var(--border-dark);
     background: rgba(26, 31, 58, 0.6);
@@ -54,6 +61,16 @@
 .settings-btn:hover {
     border-color: var(--accent-cyan);
     color: var(--text-primary);
+}
+
+.settings-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.settings-btn:disabled:hover {
+    border-color: var(--border-dark);
+    color: var(--text-muted);
 }
 
 .settings-panel {

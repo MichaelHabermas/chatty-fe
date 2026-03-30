@@ -1,6 +1,8 @@
 function createAppState(initialSettings) {
     return {
         settings: initialSettings,
+        /** Incremented on New chat reset; stale request handlers bail via epoch check */
+        requestEpoch: 0,
         messages: [],
         isStreaming: false,
         currentAssistantMessageId: null,

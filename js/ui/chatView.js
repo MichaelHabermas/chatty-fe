@@ -1,5 +1,6 @@
 function createChatView(elements) {
-    const { messagesEl, inputEl, sendBtnEl, hintEl, emptyStateEl, connectionStatusEl } = elements;
+    const { messagesEl, inputEl, sendBtnEl, hintEl, connectionStatusEl } = elements;
+    let emptyStateEl = elements.emptyStateEl;
 
     /** @type {Map<string, HTMLElement>} */
     const assistantNodesById = new Map();
@@ -135,6 +136,20 @@ function createChatView(elements) {
         assistantNodesById.clear();
     }
 
+    function resetToEmptyThread() {
+        messagesEl.replaceChildren();
+        assistantNodesById.clear();
+        const wrap = document.createElement("div");
+        wrap.className = "message assistant";
+        const contentNode = document.createElement("div");
+        contentNode.className = "message-content";
+        contentNode.id = "empty-state-message";
+        contentNode.textContent = "Ask anything to start chatting.";
+        wrap.appendChild(contentNode);
+        messagesEl.appendChild(wrap);
+        emptyStateEl = contentNode;
+    }
+
     /**
      * @param {(id: string, modifiers?: { shiftKey?: boolean }) => void} handler
      */
@@ -162,6 +177,7 @@ function createChatView(elements) {
         setCompareHighlight,
         setAssistantStreaming,
         clearThreadDom,
+        resetToEmptyThread,
         setOnAssistantSelect,
         getAssistantNode,
     };

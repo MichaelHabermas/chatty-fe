@@ -27,6 +27,7 @@ const dom = {
     settingsStreamEnabled: document.querySelector("#settings-stream-enabled"),
     settingsWebSearchMode: document.querySelector("#settings-web-search-mode"),
     settingsResetBtn: document.querySelector("#settings-reset-btn"),
+    chatResetBtn: document.querySelector("#chat-reset-btn"),
     metricModel: document.querySelector("#metric-model"),
     metricLatency: document.querySelector("#metric-latency"),
     metricStreamLabel: document.querySelector("#metric-stream-label"),
@@ -182,6 +183,39 @@ function clearTelemetryCompare() {
     state.telemetryComparePair = null;
 }
 
+function updateChatResetButton() {
+    if (!dom.chatResetBtn) {
+        return;
+    }
+    const canReset = state.messages.length > 0 || state.isStreaming;
+    dom.chatResetBtn.disabled = !canReset;
+}
+
+function resetChat() {
+    state.requestEpoch += 1;
+    try {
+        state.abortController?.abort();
+    } catch {
+        /* ignore */
+    }
+    state.messages = [];
+    state.sessionCostUsd = 0;
+    state.telemetrySelectionId = null;
+    clearTelemetryCompare();
+    state.currentAssistantMessageId = null;
+    state.isStreaming = false;
+    state.abortController = null;
+    state.requestStartedAt = null;
+
+    chatView.resetToEmptyThread();
+    chatView.setBusy(false);
+    chatView.setAssistantInteractionEnabled(true);
+    chatView.setTelemetrySelection(null);
+    chatView.setCompareHighlight({ pendingId: null, leftId: null, rightId: null });
+    persistSession();
+    applyTelemetryView();
+}
+
 function applyTelemetryView() {
     try {
         if (state.isStreaming) {
@@ -264,6 +298,7 @@ function applyTelemetryView() {
         refreshSessionSparkline();
     } finally {
         syncCompareConstellation();
+        updateChatResetButton();
     }
 }
 
@@ -386,6 +421,10 @@ restorePersistedThread();
 metricsView.updateSessionCost(state.sessionCostUsd);
 applyTelemetryView();
 
+dom.chatResetBtn?.addEventListener("click", () => {
+    resetChat();
+});
+
 dom.telemetryDiffClose?.addEventListener("click", () => {
     clearTelemetryCompare();
     applyTelemetryView();
@@ -414,6 +453,8 @@ dom.chatForm.addEventListener("submit", async (event) => {
     if (!prompt || state.isStreaming) {
         return;
     }
+
+    const epochAtSubmit = state.requestEpoch;
 
     clearTelemetryCompare();
     state.telemetrySelectionId = null;
@@ -549,6 +590,9 @@ dom.chatForm.addEventListener("submit", async (event) => {
         persistSession();
         metricsView.setStreamingActive(false);
     } finally {
+        if (epochAtSubmit !== state.requestEpoch) {
+            return;
+        }
         chatView.setAssistantStreaming(assistantMessage.id, false);
         state.isStreaming = false;
         state.abortController = null;
