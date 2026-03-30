@@ -31,4 +31,8 @@
     .message-content {
         max-width: 85%;
     }
+
+    .settings-form {
+        grid-template-columns: 1fr;
+    }
 }

@@ -32,6 +32,94 @@
     letter-spacing: 0.5px;
 }
 
+.chat-header-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.settings-btn {
+    border: 1px solid var(--border-dark);
+    background: rgba(26, 31, 58, 0.6);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.settings-btn:hover {
+    border-color: var(--accent-cyan);
+    color: var(--text-primary);
+}
+
+.settings-panel {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-dark);
+    background: rgba(10, 14, 39, 0.35);
+}
+
+.settings-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.settings-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.settings-field input,
+.settings-field select {
+    background: rgba(26, 31, 58, 0.6);
+    border: 1px solid var(--border-dark);
+    color: var(--text-primary);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 12px;
+}
+
+.settings-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    grid-column: 1 / -1;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.settings-actions {
+    display: flex;
+    gap: 8px;
+    grid-column: 1 / -1;
+}
+
+.settings-reset-btn {
+    border: 1px solid var(--border-dark);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: inherit;
+    border-radius: 6px;
+    padding: 10px 14px;
+    cursor: pointer;
+}
+
+.settings-reset-btn:hover {
+    border-color: var(--accent-cyan);
+    color: var(--text-primary);
+}
+
 .messages {
     flex: 1;
     overflow-y: auto;
@@ -50,6 +138,12 @@
 
 .message.user {
     justify-content: flex-end;
+}
+
+.message.system .message-content {
+    background: rgba(255, 184, 0, 0.08);
+    border: 1px solid rgba(255, 184, 0, 0.3);
+    color: var(--text-primary);
 }
 
 .message-content {
@@ -139,4 +233,16 @@
 
 .send-btn:active {
     transform: translateY(0);
+}
+
+.send-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.input-hint {
+    margin-top: 8px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
 }
