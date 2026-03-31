@@ -1,6 +1,15 @@
 # chatty-fe
 
-Vanilla HTML/CSS/JS UI for [chatty-be](https://github.com/MichaelHabermas/chatty-be), calling `POST /v1/chat/completions` on the configured base URL.
+Vanilla HTML/CSS/JS **AI proxy cockpit** for [chatty-be](https://github.com/MichaelHabermas/chatty-be). The UI calls `POST /v1/chat/completions` on the configured base URL and surfaces latency, tokens, cost, web search, and per-turn quality in a dedicated Telemetry panel.
+
+## Highlights
+
+- **Same-origin dev server** — avoids browser CORS issues when the deployed API does not expose `POST` to arbitrary origins (see below).
+- **Telemetry** — per-assistant-turn metrics, click-to-inspect, turn compare (Shift+click two replies), spend trajectory, debug bundle copy, optional resonance (“keep this”) and session **emotional weather**.
+- **Quality** — rate replies 1–5, see **Quality by Setting** (model / web search / streaming), optional **Apply** recommendations, and lightweight **input coaching** from your ratings.
+- **Rendering** — assistant messages render as **Markdown** (sanitized HTML).
+
+A fuller, implementation-oriented list lives in [FEATURES.md](FEATURES.md).
 
 ## Why the dev server?
 
@@ -28,3 +37,7 @@ Default production API: [https://chatty-be-is9h.onrender.com/](https://chatty-be
 - **API Key** — optional `CHATTY_API_KEY` bearer token when the backend requires auth
 - **Web search mode** — `auto` / `on` / `off` (see backend docs)
 - **Streaming** — SSE token streaming when enabled
+
+## Cost display
+
+The client prefers server-reported USD (e.g. `X-Chatty-Cost-Usd` or numeric fields on `usage`); otherwise it **estimates** from token counts using Groq rate tables in `js/pricing/`. See Telemetry for last-turn cost, session total, and optional prompt/completion breakdown when estimated.

@@ -90,13 +90,15 @@ You see the **shape** of spend across the conversation, not only the final sessi
 
 **Shift+click** an assistant reply to mark the **first** turn, then **Shift+click** another to open **Turn compare**: a table of **First** vs **Second** with **Δ** for cost, latency, tokens, and web-source count (plus model, Server-Timing rows, truncated request ids). The main Telemetry block reflects the **first** turn. **Clear** on the panel, **Esc** (when the chat input is not focused), or a **normal click** on a reply exits compare. New sends clear compare state. Left/right bubbles use distinct highlights.
 
+While two turns are selected, an SVG **compare constellation** draws a curved path between the two bubbles (cyan/magenta gradient nodes) so the pair is visible in the scrollport.
+
 ### Why
 
 See **what changed** between two completions without pasting two debug bundles.
 
 ### Docs
 
-`js/telemetry/telemetryDiff.js`, `js/ui/metricsView.js`, `js/ui/chatView.js`, `js/main.js`.
+`js/telemetry/telemetryDiff.js`, `js/ui/compareConstellation.js`, `js/ui/metricsView.js`, `js/ui/chatView.js`, `js/main.js`, `index.html`, `css/components/chat.css`.
 
 ---
 
@@ -129,3 +131,70 @@ The UI should feel like it has a memory of the session, not just a stack of isol
 ### Docs
 
 `index.html`, `js/main.js`, `css/tokens.css`, `css/base.css`, `css/layout.css`, `css/animations.css`.
+
+---
+
+## Quality ratings, insights, and coaching (chatty-fe)
+
+### Added
+
+- **1–5 quality rating** on assistant turns (inline control); ratings persist with the thread in **`localStorage`** and feed the Telemetry **Quality Rating** block for the selected turn.
+- **Quality by Setting** — after enough rated turns, the sidebar groups average quality by **model**, **web search mode**, and **streaming** on/off (`js/telemetry/qualityInsights.js`).
+- **Recommendations** — with sufficient rated history, the UI may suggest toggling web search or streaming when averages favor a setting; **Apply** updates **runtime** settings and the form controls for the next request; use **Save** in Settings if you want the choice in **localStorage** across reloads.
+- **Input coaching** — short hint above the composer (`computeNextTurnSuggestion`) derived from rated turns; hidden while streaming or in turn-compare mode.
+
+### Why
+
+Subjective “was this good?” becomes a **session-level signal** next to cost and latency, and patterns across settings are visible without exporting data.
+
+### Docs
+
+`js/utils/quality.js`, `js/telemetry/qualityInsights.js`, `js/ui/metricsView.js`, `js/ui/chatView.js`, `js/main.js`, `css/components/quality.css`, `css/components/metrics.css`.
+
+---
+
+## Markdown rendering (chatty-fe)
+
+### Added
+
+Assistant message bodies go through **marked** and **DOMPurify** (`js/render/markdownToSafeHtml.js`) so replies can use headings, lists, code fences, and links without raw HTML injection.
+
+### Why
+
+Long model output stays readable in-thread without a heavy UI framework.
+
+### Docs
+
+`index.html` (import map), `js/render/markdownToSafeHtml.js`, `js/ui/chatView.js`.
+
+---
+
+## Message vitals cards (chatty-fe)
+
+### Added
+
+Compact **vitals** cards (latency, tok/s, web search used, cost) render beside the **assistant bubble** whose telemetry is selected; in **Turn compare**, both compared bubbles get cards. Hidden while streaming.
+
+### Why
+
+Key numbers stay **in context** with the message you are inspecting (or comparing) without rereading the full sidebar.
+
+### Docs
+
+`js/ui/vitalsCard.js`, `js/main.js`, `css/components/chat.css`.
+
+---
+
+## Cost resolution and breakdown (chatty-fe)
+
+### Added
+
+Per-request USD prefers **`X-Chatty-Cost-Usd`** (surfaced via response metadata) or numeric cost fields on **`usage`**; otherwise the client **estimates** from prompt/completion token counts using **`js/pricing/`** Groq rate tables. When estimating, Telemetry can show **prompt** vs **completion** breakdown and a short disclaimer.
+
+### Why
+
+Observable spend should match billing when the backend reports it, and stay **honest** when only tokens are available.
+
+### Docs
+
+`js/pricing/resolveCost.js`, `js/pricing/estimateCost.js`, `js/services/chatClient.js`, `js/ui/metricsView.js`.
