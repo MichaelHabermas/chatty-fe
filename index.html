@@ -18,6 +18,15 @@
                         <button type="button" class="settings-btn" id="chat-reset-btn" aria-label="Clear messages and start a new chat">
                             New chat
                         </button>
+                        <button
+                            type="button"
+                            class="settings-btn settings-btn--constellation"
+                            id="memory-constellation-toggle-btn"
+                            aria-expanded="false"
+                            aria-controls="memory-constellation"
+                        >
+                            Memory
+                        </button>
                         <button type="button" class="settings-btn" id="settings-toggle-btn" aria-expanded="false" aria-controls="settings-panel">
                             Settings
                         </button>
@@ -92,6 +101,31 @@
                     <circle class="compare-constellation__node compare-constellation__node--a" data-compare-node-a r="4" fill="#00f0ff" opacity="0" />
                     <circle class="compare-constellation__node compare-constellation__node--b" data-compare-node-b r="4" fill="#ff78c8" opacity="0" />
                 </svg>
+                <section class="memory-constellation" id="memory-constellation" hidden aria-label="Memory constellation view">
+                    <div class="memory-constellation__hud">
+                        <div>
+                            <div class="memory-constellation__eyebrow">Memory constellation</div>
+                            <div class="memory-constellation__title">The session as a navigable star map</div>
+                        </div>
+                        <div class="memory-constellation__legend">
+                            <span>Bright = kept</span>
+                            <span>Large = quality</span>
+                            <span>Arc = compare</span>
+                        </div>
+                    </div>
+                    <div class="memory-constellation__field" id="memory-constellation-field">
+                        <svg
+                            class="memory-constellation__links"
+                            id="memory-constellation-links"
+                            xmlns="http://www.w3.org/2000/svg"
+                            aria-hidden="true"
+                        >
+                            <path class="memory-constellation__resonance-path" id="memory-constellation-resonance-path" fill="none" />
+                            <path class="memory-constellation__compare-path" id="memory-constellation-compare-path" fill="none" />
+                        </svg>
+                        <div class="memory-constellation__stars" id="memory-constellation-stars"></div>
+                    </div>
+                </section>
             </div>
 
             <div class="input-area">

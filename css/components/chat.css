@@ -63,6 +63,18 @@
     color: var(--text-primary);
 }
 
+.settings-btn--active,
+.settings-btn--constellation {
+    letter-spacing: 0.08em;
+}
+
+.settings-btn--active {
+    border-color: rgba(255, 184, 0, 0.4);
+    background: linear-gradient(135deg, rgba(255, 184, 0, 0.14), rgba(255, 120, 200, 0.08));
+    color: rgba(255, 245, 225, 0.96);
+    box-shadow: 0 0 16px rgba(255, 184, 0, 0.1);
+}
+
 .settings-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;
@@ -170,6 +182,245 @@
 
 .compare-constellation--active {
     opacity: 1;
+}
+
+.memory-constellation {
+    position: absolute;
+    inset: 18px 24px 20px;
+    z-index: 3;
+    border: 1px solid rgba(255, 184, 0, 0.14);
+    border-radius: 18px;
+    background:
+        linear-gradient(180deg, rgba(4, 8, 22, 0.9), rgba(8, 12, 30, 0.84)),
+        radial-gradient(circle at top left, rgba(255, 184, 0, 0.08), transparent 36%),
+        radial-gradient(circle at 80% 24%, rgba(0, 240, 255, 0.1), transparent 30%);
+    backdrop-filter: blur(18px);
+    box-shadow:
+        0 22px 50px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        inset 0 0 90px rgba(0, 240, 255, 0.03);
+    overflow: hidden;
+    animation: metricsFadeIn 0.35s ease-out;
+}
+
+.memory-constellation__hud {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
+}
+
+.memory-constellation__eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 184, 0, 0.68);
+}
+
+.memory-constellation__title {
+    margin-top: 4px;
+    font-size: 15px;
+    color: rgba(245, 247, 250, 0.96);
+}
+
+.memory-constellation__legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(139, 146, 169, 0.86);
+}
+
+.memory-constellation__field {
+    position: relative;
+    min-height: 420px;
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+}
+
+.memory-constellation__field::before,
+.memory-constellation__field::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.memory-constellation__field::before {
+    background:
+        radial-gradient(circle at 16% 18%, rgba(255, 184, 0, 0.1), transparent 18%),
+        radial-gradient(circle at 82% 24%, rgba(0, 240, 255, 0.1), transparent 22%),
+        radial-gradient(circle at 56% 72%, rgba(255, 120, 200, 0.12), transparent 24%);
+    filter: blur(18px);
+    opacity: 0.8;
+}
+
+.memory-constellation__field::after {
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.75) 0 1px, transparent 1.5px),
+        radial-gradient(circle, rgba(255, 255, 255, 0.45) 0 1px, transparent 1.5px),
+        radial-gradient(circle, rgba(0, 240, 255, 0.24) 0 1px, transparent 1.5px);
+    background-size: 120px 120px, 170px 170px, 210px 210px;
+    background-position: 10px 20px, 70px 90px, 30px 50px;
+    opacity: 0.22;
+}
+
+.memory-constellation__links,
+.memory-constellation__stars {
+    position: absolute;
+    inset: 0;
+}
+
+.memory-constellation__links {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.memory-constellation__resonance-path {
+    stroke: rgba(255, 184, 0, 0.52);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-dasharray: 2 9;
+    filter: drop-shadow(0 0 6px rgba(255, 184, 0, 0.24));
+}
+
+.memory-constellation__compare-path {
+    stroke: url(#compare-constellation-gradient);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.2));
+}
+
+.memory-constellation__stars {
+    position: relative;
+}
+
+.memory-constellation__star {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    min-width: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+}
+
+.memory-constellation__star-core {
+    position: relative;
+    display: block;
+    width: var(--star-size);
+    height: var(--star-size);
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.96), rgba(0, 240, 255, 0.84) 35%, rgba(0, 240, 255, 0.12) 100%);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.22),
+        0 0 16px rgba(0, 240, 255, 0.45),
+        0 0 38px rgba(0, 240, 255, 0.12);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.memory-constellation__star-core::before {
+    content: '';
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    opacity: 0;
+    transform: scale(0.88);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.memory-constellation__star:hover .memory-constellation__star-core,
+.memory-constellation__star--selected .memory-constellation__star-core {
+    transform: scale(1.08);
+}
+
+.memory-constellation__star:hover .memory-constellation__star-core::before,
+.memory-constellation__star--selected .memory-constellation__star-core::before,
+.memory-constellation__star--resonant .memory-constellation__star-core::before {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.memory-constellation__star--resonant .memory-constellation__star-core {
+    background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.96), rgba(255, 184, 0, 0.88) 34%, rgba(255, 120, 200, 0.16) 100%);
+    box-shadow:
+        0 0 0 1px rgba(255, 184, 0, 0.24),
+        0 0 16px rgba(255, 184, 0, 0.42),
+        0 0 42px rgba(255, 120, 200, 0.12);
+}
+
+.memory-constellation__star--compare-right .memory-constellation__star-core {
+    background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.96), rgba(255, 120, 200, 0.86) 34%, rgba(255, 120, 200, 0.12) 100%);
+}
+
+.memory-constellation__star--pending .memory-constellation__star-core {
+    box-shadow:
+        0 0 0 1px rgba(255, 184, 0, 0.3),
+        0 0 20px rgba(255, 184, 0, 0.3);
+}
+
+.memory-constellation__star-label,
+.memory-constellation__star-meta {
+    display: block;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.memory-constellation__star-label {
+    margin-top: 10px;
+    max-width: 160px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: rgba(245, 247, 250, 0.92);
+}
+
+.memory-constellation__star-meta {
+    margin-top: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(139, 146, 169, 0.82);
+}
+
+.memory-constellation__star:hover .memory-constellation__star-label,
+.memory-constellation__star:hover .memory-constellation__star-meta,
+.memory-constellation__star--selected .memory-constellation__star-label,
+.memory-constellation__star--selected .memory-constellation__star-meta,
+.memory-constellation__star--resonant .memory-constellation__star-label,
+.memory-constellation__star--compare-left .memory-constellation__star-label,
+.memory-constellation__star--compare-right .memory-constellation__star-label {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.memory-constellation__empty {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    width: min(320px, calc(100% - 40px));
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    line-height: 1.7;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(139, 146, 169, 0.88);
 }
 
 .compare-constellation__path {
@@ -549,5 +800,23 @@
     to {
         opacity: 1;
         transform: scale(1);
+    }
+}
+
+@media (max-width: 900px) {
+    .memory-constellation {
+        inset: 12px;
+    }
+
+    .memory-constellation__hud {
+        flex-direction: column;
+    }
+
+    .memory-constellation__legend {
+        justify-content: flex-start;
+    }
+
+    .memory-constellation__field {
+        min-height: 340px;
     }
 }

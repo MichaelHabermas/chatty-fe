@@ -20,6 +20,22 @@ Backend env and edge cases: `CLAUDE.md` in the Chatty server repo.
 
 ---
 
+## Memory constellation (chatty-fe)
+
+### Added
+
+A toggleable **Memory Constellation** view opens from the chat header and turns the session into a star map of assistant turns. Each reply becomes a node positioned by sequence, with **kept moments** burning brighter, **quality** and **cost/latency** shaping emphasis, and **Turn compare** drawing orbital links between paired replies. Selecting a star jumps the thread back to that reply and replays its Telemetry context.
+
+### Why
+
+Chatty already remembers a lot; this makes that memory **felt**. Instead of scattering resonance, weather, compare, and telemetry across separate surfaces, the session gains a single emotional artifact that shows where the conversation changed.
+
+### Docs
+
+`index.html`, `js/main.js`, `js/ui/chatView.js`, `js/ui/memoryConstellation.js`, `css/components/chat.css`.
+
+---
+
 ## Agent-shaped `/v1/chat/completions`
 
 ### Added

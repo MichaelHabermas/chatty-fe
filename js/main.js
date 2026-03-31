@@ -13,6 +13,7 @@ import {
 import { createAppState, createMessage } from "./state.js";
 import { createCompareConstellation } from "./ui/compareConstellation.js";
 import { createChatView } from "./ui/chatView.js";
+import { createMemoryConstellation } from "./ui/memoryConstellation.js";
 import { createMetricsView } from "./ui/metricsView.js";
 import { createSettingsView } from "./ui/settingsView.js";
 import { createVitalsCardManager } from "./ui/vitalsCard.js";
@@ -35,6 +36,13 @@ const dom = {
     settingsWebSearchMode: document.querySelector("#settings-web-search-mode"),
     settingsResetBtn: document.querySelector("#settings-reset-btn"),
     chatResetBtn: document.querySelector("#chat-reset-btn"),
+    memoryConstellationToggleBtn: document.querySelector("#memory-constellation-toggle-btn"),
+    memoryConstellation: document.querySelector("#memory-constellation"),
+    memoryConstellationField: document.querySelector("#memory-constellation-field"),
+    memoryConstellationStars: document.querySelector("#memory-constellation-stars"),
+    memoryConstellationLinks: document.querySelector("#memory-constellation-links"),
+    memoryConstellationResonancePath: document.querySelector("#memory-constellation-resonance-path"),
+    memoryConstellationComparePath: document.querySelector("#memory-constellation-compare-path"),
     metricModel: document.querySelector("#metric-model"),
     metricLatency: document.querySelector("#metric-latency"),
     metricStreamLabel: document.querySelector("#metric-stream-label"),
@@ -91,6 +99,47 @@ const chatView = createChatView({
 const compareConstellation = createCompareConstellation({
     messagesEl: dom.messages,
     getAssistantNode: (id) => chatView.getAssistantNode(id),
+});
+
+const memoryConstellation = createMemoryConstellation({
+    rootEl: dom.memoryConstellation,
+    fieldEl: dom.memoryConstellationField,
+    starsEl: dom.memoryConstellationStars,
+    linksSvgEl: dom.memoryConstellationLinks,
+    resonancePathEl: dom.memoryConstellationResonancePath,
+    comparePathEl: dom.memoryConstellationComparePath,
+    toggleBtnEl: dom.memoryConstellationToggleBtn,
+    onSelect: (id, modifiers) => {
+        const shiftKey = modifiers?.shiftKey === true;
+
+        if (shiftKey) {
+            if (state.telemetryComparePair) {
+                state.telemetryComparePair = null;
+            }
+            if (state.telemetryComparePendingId === id) {
+                state.telemetryComparePendingId = null;
+            } else if (!state.telemetryComparePendingId) {
+                state.telemetryComparePendingId = id;
+            } else {
+                const leftId = state.telemetryComparePendingId;
+                const leftMsg = state.messages.find((m) => m.id === leftId);
+                const rightMsg = state.messages.find((m) => m.id === id);
+                if (leftMsg?.telemetrySnapshot?.v === 1 && rightMsg?.telemetrySnapshot?.v === 1) {
+                    state.telemetryComparePair = { left: leftId, right: id };
+                }
+                state.telemetryComparePendingId = null;
+            }
+            state.telemetrySelectionId = null;
+        } else {
+            state.telemetryComparePendingId = null;
+            state.telemetryComparePair = null;
+            const lastId = getLastAssistantSnapshotId(state.messages);
+            state.telemetrySelectionId = id === lastId ? null : id;
+            chatView.scrollAssistantIntoView(id);
+        }
+        applyTelemetryView();
+        persistSession();
+    },
 });
 
 const vitalsCardManager = createVitalsCardManager({
@@ -400,6 +449,16 @@ function applySessionWeather() {
     dom.cockpit.dataset.weather = computeSessionWeather(state.messages);
 }
 
+function syncMemoryConstellation() {
+    memoryConstellation?.render({
+        messages: state.messages,
+        selectedId: state.telemetrySelectionId,
+        pendingId: state.telemetryComparePendingId,
+        comparePair: state.telemetryComparePair,
+        lastId: getLastAssistantSnapshotId(state.messages),
+    });
+}
+
 function applyTelemetryView() {
     try {
         if (state.isStreaming) {
@@ -500,6 +559,7 @@ function applyTelemetryView() {
     } finally {
         applySessionWeather();
         syncCompareConstellation();
+        syncMemoryConstellation();
         syncVitalsCards();
         updateChatResetButton();
         updateInputCoaching();
@@ -709,6 +769,12 @@ applyTelemetryView();
 
 dom.chatResetBtn?.addEventListener("click", () => {
     resetChat();
+});
+
+dom.memoryConstellationToggleBtn?.addEventListener("click", () => {
+    const nextOpen = !memoryConstellation?.isOpen();
+    memoryConstellation?.setOpen(nextOpen);
+    syncMemoryConstellation();
 });
 
 dom.telemetryDiffClose?.addEventListener("click", () => {

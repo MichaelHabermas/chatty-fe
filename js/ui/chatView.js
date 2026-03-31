@@ -238,6 +238,14 @@ function createChatView(elements) {
         assistantNodesById.clear();
     }
 
+    function scrollAssistantIntoView(id) {
+        const node = assistantNodesById.get(id);
+        if (!node) {
+            return;
+        }
+        node.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+
     function resetToEmptyThread() {
         messagesEl.replaceChildren();
         assistantNodesById.clear();
@@ -308,6 +316,7 @@ function createChatView(elements) {
         setCompareHighlight,
         setAssistantStreaming,
         clearThreadDom,
+        scrollAssistantIntoView,
         resetToEmptyThread,
         setOnAssistantSelect,
         getAssistantNode,
