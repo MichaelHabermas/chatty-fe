@@ -56,6 +56,8 @@ const dom = {
     telemetryDiff: document.querySelector("#telemetry-diff"),
     telemetryDiffBody: document.querySelector("#telemetry-diff-body"),
     telemetryDiffClose: document.querySelector("#telemetry-diff-close"),
+    qualityGroup: document.querySelector("#metric-quality-group"),
+    qualityValue: document.querySelector("#metric-quality-value"),
 };
 
 const initialSettings = loadSettings();
@@ -161,6 +163,8 @@ const metricsView = createMetricsView({
     costSessionSparklinePolylineEl: dom.costSessionSparklinePolyline,
     telemetryDiffEl: dom.telemetryDiff,
     telemetryDiffBodyEl: dom.telemetryDiffBody,
+    qualityGroupEl: dom.qualityGroup,
+    qualityValueEl: dom.qualityValue,
 });
 
 function messageToPersisted(m) {
@@ -169,6 +173,7 @@ function messageToPersisted(m) {
         role: m.role,
         content: m.content,
         telemetrySnapshot: m.telemetrySnapshot ?? null,
+        quality: m.quality ?? null,
     };
 }
 
@@ -185,11 +190,13 @@ function validatePersistedMessage(raw) {
     if (typeof raw.content !== "string") {
         return null;
     }
+    const quality = raw.quality ?? null;
     return {
         id: raw.id,
         role: raw.role,
         content: raw.content,
         telemetrySnapshot: raw.telemetrySnapshot ?? null,
+        quality: typeof quality === "number" && quality >= 1 && quality <= 5 ? quality : null,
     };
 }
 
@@ -287,7 +294,8 @@ function applyTelemetryView() {
             const rSnap = rightMsg?.telemetrySnapshot;
             if (lSnap?.v === 1 && rSnap?.v === 1) {
                 metricsView.hydrateFromSnapshot(lSnap, state.sessionCostUsd);
-                metricsView.showTelemetryDiff(lSnap, rSnap);
+                metricsView.setQualityDisplay(leftMsg?.quality);
+                metricsView.showTelemetryDiff(lSnap, rSnap, leftMsg?.quality, rightMsg?.quality);
                 metricsView.setTelemetryViewMode("diff");
                 chatView.setTelemetrySelection(null);
                 chatView.setCompareHighlight({ pendingId: null, leftId: pair.left, rightId: pair.right });
@@ -336,6 +344,7 @@ function applyTelemetryView() {
         }
 
         metricsView.hydrateFromSnapshot(snapshot, state.sessionCostUsd);
+        metricsView.setQualityDisplay(msg?.quality);
         const viewingHistory = targetId !== lastId;
         const mode = state.telemetryComparePendingId ? "pending" : viewingHistory ? "history" : "live";
         metricsView.setTelemetryViewMode(mode);
@@ -364,7 +373,7 @@ function restorePersistedThread() {
     for (const raw of persisted.messages) {
         const m = validatePersistedMessage(raw);
         if (m) {
-            nextMessages.push(createMessage(m.role, m.content, { id: m.id, telemetrySnapshot: m.telemetrySnapshot }));
+            nextMessages.push(createMessage(m.role, m.content, { id: m.id, telemetrySnapshot: m.telemetrySnapshot, quality: m.quality }));
         }
     }
     if (nextMessages.length === 0) {
@@ -382,10 +391,14 @@ function restorePersistedThread() {
 
     chatView.clearThreadDom();
     for (const m of state.messages) {
-        chatView.addMessage(m.role, m.content, {
+        const handle = chatView.addMessage(m.role, m.content, {
             id: m.id,
             selectable: m.role === "assistant" && Boolean(m.telemetrySnapshot),
+            quality: m.quality,
         });
+        if (m.quality && handle.qualityDisplay) {
+            chatView.setQualityRating(handle.qualityDisplay, m.quality);
+        }
     }
 }
 
@@ -467,6 +480,30 @@ dom.copyDebugBundleBtn?.addEventListener("click", async () => {
     } catch {
         chatView.setConnectionStatus("clipboard unavailable");
     }
+});
+
+// Handle quality rating clicks via event delegation
+dom.messages.addEventListener("click", (event) => {
+    const qualityDot = event.target.closest(".quality-rating-dot");
+    if (!qualityDot) return;
+
+    const rating = parseInt(qualityDot.getAttribute("data-rating"), 10);
+    const control = qualityDot.closest(".quality-rating-control");
+    const qualityDisplay = control?.closest(".message-quality-display");
+    if (!qualityDisplay) return;
+
+    const messageId = qualityDisplay.getAttribute("data-message-id");
+    const message = state.messages.find((m) => m.id === messageId);
+    if (!message) return;
+
+    // Update state
+    message.quality = rating;
+
+    // Update UI
+    chatView.setQualityRating(qualityDisplay, rating);
+
+    // Persist
+    persistSession();
 });
 
 restorePersistedThread();

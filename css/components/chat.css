@@ -187,7 +187,7 @@
 
 .message {
     display: flex;
-    gap: 12px;
+    gap: 8px;
     animation: slideIn 0.4s ease-out;
 }
 

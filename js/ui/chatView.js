@@ -1,5 +1,6 @@
 import { markdownToSafeHtml } from "../render/markdownToSafeHtml.js";
 import { generateFingerprintSVG, generateFingerprintHash } from "../utils/fingerprint.js";
+import { generateQualityIcon, formatQuality, createQualityRatingControl } from "../utils/quality.js";
 
 function createChatView(elements) {
     const { messagesEl, inputEl, sendBtnEl, hintEl, connectionStatusEl } = elements;
@@ -110,6 +111,7 @@ function createChatView(elements) {
         node.appendChild(contentNode);
 
         const id = options.id;
+        let qualityDisplay = null;
         if (role === "assistant" && id) {
             const fingerprintBadge = document.createElement("div");
             fingerprintBadge.className = "message-fingerprint";
@@ -127,6 +129,33 @@ function createChatView(elements) {
             fingerprintBadge.appendChild(fingerprintVisual);
             fingerprintBadge.appendChild(fingerprintHashEl);
             node.appendChild(fingerprintBadge);
+
+            const qualityBadge = document.createElement("div");
+            qualityBadge.className = "message-quality";
+            qualityDisplay = document.createElement("div");
+            qualityDisplay.className = "message-quality-display";
+            qualityDisplay.setAttribute("data-message-id", id);
+            qualityDisplay.setAttribute("role", "button");
+            qualityDisplay.setAttribute("aria-label", "Rate response quality");
+            qualityDisplay.style.position = "relative";
+
+            const qualityIcon = document.createElement("div");
+            qualityIcon.className = "message-quality-icon";
+            qualityIcon.innerHTML = generateQualityIcon(options.quality);
+            qualityDisplay.appendChild(qualityIcon);
+
+            // Create and append the rating control (hidden by default, shown on hover)
+            const ratingControl = createQualityRatingControl(options.quality);
+            qualityDisplay.appendChild(ratingControl);
+
+            qualityBadge.appendChild(qualityDisplay);
+
+            const qualityValue = document.createElement("div");
+            qualityValue.className = "message-quality-value";
+            qualityValue.textContent = formatQuality(options.quality);
+            qualityBadge.appendChild(qualityValue);
+
+            node.appendChild(qualityBadge);
         }
 
         messagesEl.appendChild(node);
@@ -141,6 +170,7 @@ function createChatView(elements) {
             contentNode,
             id,
             role,
+            qualityDisplay,
         };
     }
 
@@ -198,6 +228,35 @@ function createChatView(elements) {
         return assistantNodesById.get(id) ?? null;
     }
 
+    /**
+     * @param {HTMLElement} qualityDisplay
+     * @param {number | null} quality 1-5 or null
+     */
+    function setQualityRating(qualityDisplay, quality) {
+        if (!qualityDisplay) return;
+
+        const icon = qualityDisplay.querySelector(".message-quality-icon");
+        if (icon) {
+            icon.innerHTML = generateQualityIcon(quality);
+        }
+
+        qualityDisplay.classList.toggle("message-quality-display--rated", quality != null);
+        qualityDisplay.title = quality ? `Quality: ${quality}/5` : "Rate quality";
+
+        // Update or add the rating control
+        let control = qualityDisplay.querySelector(".quality-rating-control");
+        if (!control) {
+            control = createQualityRatingControl(quality);
+            qualityDisplay.appendChild(control);
+        }
+
+        // Update filled dots
+        const dots = control.querySelectorAll(".quality-rating-dot");
+        dots.forEach((dot, idx) => {
+            dot.classList.toggle("quality-rating-dot--filled", quality != null && idx < quality);
+        });
+    }
+
     return {
         addMessage,
         clearInput,
@@ -213,6 +272,7 @@ function createChatView(elements) {
         resetToEmptyThread,
         setOnAssistantSelect,
         getAssistantNode,
+        setQualityRating,
     };
 }
 

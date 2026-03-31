@@ -3,6 +3,7 @@
 @import './animations.css';
 @import './layout.css';
 @import './components/chat.css';
+@import './components/quality.css';
 @import './components/markdown.css';
 @import './components/vitals.css';
 @import './components/metrics.css';

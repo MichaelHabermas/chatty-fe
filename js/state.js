@@ -23,6 +23,7 @@ function createMessage(role, content, extra = {}) {
         role,
         content,
         telemetrySnapshot: extra.telemetrySnapshot ?? null,
+        quality: extra.quality ?? null,
     };
 }
 

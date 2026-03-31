@@ -146,6 +146,27 @@ function buildDiffRows(leftSnap, rightSnap) {
     return rows;
 }
 
+/**
+ * Build diff rows with quality data
+ */
+function buildDiffRowsWithQuality(leftSnap, rightSnap, leftQuality, rightQuality) {
+    const rows = buildDiffRows(leftSnap, rightSnap);
+
+    if (leftQuality != null || rightQuality != null) {
+        const leftQualityLabel = leftQuality != null ? `${Math.round(leftQuality)}/5` : "—";
+        const rightQualityLabel = rightQuality != null ? `${Math.round(rightQuality)}/5` : "—";
+        rows.push({
+            label: "Quality",
+            a: leftQualityLabel,
+            b: rightQualityLabel,
+            delta: formatDeltaNumber(leftQuality, rightQuality, 1, ""),
+            isQuality: true,
+        });
+    }
+
+    return rows;
+}
+
 function formatDeltaUsd(a, b) {
     if (a == null && b == null) {
         return "—";
@@ -176,4 +197,4 @@ function formatDeltaNumber(a, b, decimals, suffix) {
     return `${sign}${n}${suffix}`;
 }
 
-export { buildDiffRows, extractComparableFields };
+export { buildDiffRows, buildDiffRowsWithQuality, extractComparableFields };

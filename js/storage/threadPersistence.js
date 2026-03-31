@@ -1,7 +1,7 @@
 import { THREAD_STORAGE_KEY } from "../config.js";
 
 /**
- * @param {{ messages: Array<{ id: string, role: string, content: string, telemetrySnapshot?: object | null }>, sessionCostUsd: number, telemetrySelectionId: string | null }} payload
+ * @param {{ messages: Array<{ id: string, role: string, content: string, telemetrySnapshot?: object | null, quality?: number | null }>, sessionCostUsd: number, telemetrySelectionId: string | null }} payload
  */
 function saveThread(payload) {
     try {

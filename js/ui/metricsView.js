@@ -1,4 +1,4 @@
-import { buildDiffRows } from "../telemetry/telemetryDiff.js";
+import { buildDiffRows, buildDiffRowsWithQuality } from "../telemetry/telemetryDiff.js";
 
 function formatUsd4(value) {
     if (value == null || Number.isNaN(value)) {
@@ -58,6 +58,8 @@ function createMetricsView(elements) {
         costSessionSparklinePolylineEl,
         telemetryDiffEl,
         telemetryDiffBodyEl,
+        qualityGroupEl,
+        qualityValueEl,
     } = elements;
 
     function resetLastRequestCost() {
@@ -139,6 +141,25 @@ function createMetricsView(elements) {
         setStreamStatus("idle");
         streamIndicatorEl.style.opacity = "0.4";
         resetLastRequestCost();
+        if (qualityGroupEl) {
+            qualityGroupEl.hidden = true;
+            if (qualityValueEl) {
+                qualityValueEl.textContent = "—";
+            }
+        }
+    }
+
+    function setQualityDisplay(quality) {
+        if (!qualityGroupEl || !qualityValueEl) {
+            return;
+        }
+        if (quality && quality >= 1 && quality <= 5) {
+            qualityGroupEl.hidden = false;
+            qualityValueEl.textContent = `${Math.round(quality)}/5`;
+        } else {
+            qualityGroupEl.hidden = true;
+            qualityValueEl.textContent = "—";
+        }
     }
 
     function updateFromSettings(settings) {
@@ -263,16 +284,30 @@ function createMetricsView(elements) {
         telemetryViewLabelEl.textContent = "";
     }
 
-    function showTelemetryDiff(leftSnap, rightSnap) {
+    function showTelemetryDiff(leftSnap, rightSnap, leftQuality, rightQuality) {
         if (!telemetryDiffEl || !telemetryDiffBodyEl) {
             return;
         }
         telemetryDiffBodyEl.replaceChildren();
-        for (const row of buildDiffRows(leftSnap, rightSnap)) {
+        const rows = (leftQuality != null || rightQuality != null)
+            ? buildDiffRowsWithQuality(leftSnap, rightSnap, leftQuality, rightQuality)
+            : buildDiffRows(leftSnap, rightSnap);
+        for (const row of rows) {
             const tr = document.createElement("tr");
+            if (row.isQuality) {
+                tr.className = "telemetry-diff__row--quality";
+            }
             tr.appendChild(createTelemetryDiffCell(row.label, false));
-            tr.appendChild(createTelemetryDiffCell(row.a, false));
-            tr.appendChild(createTelemetryDiffCell(row.b, false));
+            const cellA = createTelemetryDiffCell(row.a, false);
+            if (row.isQuality) {
+                cellA.className = "telemetry-diff__td--quality";
+            }
+            tr.appendChild(cellA);
+            const cellB = createTelemetryDiffCell(row.b, false);
+            if (row.isQuality) {
+                cellB.className = "telemetry-diff__td--quality";
+            }
+            tr.appendChild(cellB);
             tr.appendChild(createTelemetryDiffCell(row.delta, true));
             telemetryDiffBodyEl.appendChild(tr);
         }
@@ -357,6 +392,7 @@ function createMetricsView(elements) {
         updateSessionCostSparkline,
         showTelemetryDiff,
         hideTelemetryDiff,
+        setQualityDisplay,
     };
 }
 
