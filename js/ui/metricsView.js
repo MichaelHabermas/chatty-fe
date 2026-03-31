@@ -1,4 +1,5 @@
 import { buildDiffRows, buildDiffRowsWithQuality } from "../telemetry/telemetryDiff.js";
+import { buildQualityInsights } from "../telemetry/qualityInsights.js";
 
 function formatUsd4(value) {
     if (value == null || Number.isNaN(value)) {
@@ -60,6 +61,14 @@ function createMetricsView(elements) {
         telemetryDiffBodyEl,
         qualityGroupEl,
         qualityValueEl,
+        qualityInsightsEl,
+        qualityInsightsContentEl,
+        recommendationEl,
+        recommendationTextEl,
+        recommendationBtnEl,
+        resonancePanelEl,
+        resonanceCountEl,
+        resonanceRibbonEl,
     } = elements;
 
     function resetLastRequestCost() {
@@ -160,6 +169,102 @@ function createMetricsView(elements) {
             qualityGroupEl.hidden = true;
             qualityValueEl.textContent = "—";
         }
+    }
+
+    function showQualityInsights(insights) {
+        if (!qualityInsightsEl || !qualityInsightsContentEl) {
+            return;
+        }
+
+        if (!insights) {
+            qualityInsightsEl.hidden = true;
+            return;
+        }
+
+        qualityInsightsContentEl.replaceChildren();
+
+        const dimensions = [
+            { key: "model", label: "Model", data: insights.model },
+            { key: "webSearch", label: "Web Search", data: insights.webSearch },
+            { key: "streaming", label: "Streaming", data: insights.streaming },
+        ];
+
+        for (const dim of dimensions) {
+            if (!dim.data || dim.data.length === 0) continue;
+
+            const dimDiv = document.createElement("div");
+            dimDiv.className = "quality-insights__dimension";
+
+            const labelDiv = document.createElement("div");
+            labelDiv.className = "quality-insights__dimension-label";
+            labelDiv.textContent = dim.label;
+            dimDiv.appendChild(labelDiv);
+
+            for (const group of dim.data) {
+                const groupDiv = document.createElement("div");
+                groupDiv.className = "quality-insights__group";
+
+                const labelSpan = document.createElement("div");
+                labelSpan.className = "quality-insights__group-label";
+                labelSpan.textContent = group.label;
+                groupDiv.appendChild(labelSpan);
+
+                const valueSpan = document.createElement("div");
+                valueSpan.className = "quality-insights__group-value";
+                valueSpan.textContent = `${group.avgQuality}`;
+                groupDiv.appendChild(valueSpan);
+
+                const countSpan = document.createElement("div");
+                countSpan.className = "quality-insights__group-count";
+                countSpan.textContent = `${group.count}`;
+                groupDiv.appendChild(countSpan);
+
+                dimDiv.appendChild(groupDiv);
+            }
+
+            qualityInsightsContentEl.appendChild(dimDiv);
+        }
+
+        qualityInsightsEl.hidden = false;
+    }
+
+    function showResonance(items, selectedId) {
+        if (!resonancePanelEl || !resonanceRibbonEl || !resonanceCountEl) {
+            return;
+        }
+
+        const list = Array.isArray(items) ? items.filter(Boolean) : [];
+        if (list.length === 0) {
+            resonancePanelEl.hidden = true;
+            resonanceRibbonEl.replaceChildren();
+            resonanceCountEl.textContent = "0 kept";
+            return;
+        }
+
+        resonanceRibbonEl.replaceChildren();
+
+        for (const item of list) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "resonance-panel__item";
+            button.dataset.messageId = item.id;
+            button.classList.toggle("resonance-panel__item--selected", item.id === selectedId);
+
+            const excerpt = document.createElement("div");
+            excerpt.className = "resonance-panel__excerpt";
+            excerpt.textContent = item.excerpt;
+            button.appendChild(excerpt);
+
+            const meta = document.createElement("div");
+            meta.className = "resonance-panel__meta";
+            meta.textContent = item.meta;
+            button.appendChild(meta);
+
+            resonanceRibbonEl.appendChild(button);
+        }
+
+        resonancePanelEl.hidden = false;
+        resonanceCountEl.textContent = `${list.length} kept`;
     }
 
     function updateFromSettings(settings) {
@@ -324,6 +429,44 @@ function createMetricsView(elements) {
     }
 
     /**
+     * Show a recommendation based on quality patterns
+     * @param {object} recommendation - { type, setting, improvement, confidence }
+     */
+    function showRecommendation(recommendation) {
+        if (!recommendationEl || !recommendationTextEl) {
+            return;
+        }
+
+        if (!recommendation) {
+            recommendationEl.hidden = true;
+            return;
+        }
+
+        let text = "";
+        if (recommendation.type === "webSearch") {
+            text = `Your data shows web search improves quality by ${recommendation.improvement}/5 points. Enable it?`;
+        } else if (recommendation.type === "streaming") {
+            text = `Your data shows streaming improves quality by ${recommendation.improvement}/5 points. Enable it?`;
+        }
+
+        if (!text) {
+            recommendationEl.hidden = true;
+            return;
+        }
+
+        recommendationTextEl.textContent = text;
+        recommendationEl.hidden = false;
+        recommendationEl.dataset.recommendation = JSON.stringify(recommendation);
+    }
+
+    function hideRecommendation() {
+        if (recommendationEl) {
+            recommendationEl.hidden = true;
+            recommendationEl.removeAttribute("data-recommendation");
+        }
+    }
+
+    /**
      * Replay Telemetry from a stored assistant-turn snapshot.
      * @param {object} snapshot
      * @param {number} sessionCostUsd
@@ -393,6 +536,10 @@ function createMetricsView(elements) {
         showTelemetryDiff,
         hideTelemetryDiff,
         setQualityDisplay,
+        showQualityInsights,
+        showRecommendation,
+        hideRecommendation,
+        showResonance,
     };
 }
 

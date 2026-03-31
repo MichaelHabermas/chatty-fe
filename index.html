@@ -99,7 +99,12 @@
                     <input id="chat-input" type="text" placeholder="Ask anything... web search optional" autocomplete="off">
                     <button type="submit" class="send-btn" id="send-btn">Send</button>
                 </form>
-                <div class="input-hint" id="input-hint">Press Enter to send</div>
+                <div class="input-hints">
+                    <div class="input-hint" id="input-hint">Press Enter to send</div>
+                    <div class="input-coaching" id="input-coaching" hidden>
+                        <span class="input-coaching__text" id="input-coaching-text"></span>
+                    </div>
+                </div>
             </div>
         </main>
 
@@ -136,6 +141,11 @@
                     </table>
                 </div>
             </section>
+
+            <div class="quality-recommendation" id="quality-recommendation" hidden>
+                <span class="quality-recommendation__text" id="quality-recommendation-text"></span>
+                <button type="button" class="quality-recommendation__btn" id="quality-recommendation-apply" aria-label="Apply recommendation">Apply</button>
+            </div>
 
             <div class="metric-group metric-group--cost">
                 <div class="metric-label">Cost</div>
@@ -186,6 +196,24 @@
                 <div class="quality-metric-label">Quality Rating</div>
                 <div class="quality-metric-value" id="metric-quality-value">—</div>
             </div>
+
+            <div class="quality-insights" id="quality-insights" hidden>
+                <div class="quality-insights__header">
+                    <div class="quality-insights__title">Quality by Setting</div>
+                </div>
+                <div id="quality-insights-content"></div>
+            </div>
+
+            <section class="resonance-panel" id="resonance-panel" hidden>
+                <div class="resonance-panel__header">
+                    <div>
+                        <div class="resonance-panel__eyebrow">Resonance Mode</div>
+                        <div class="resonance-panel__title">Moments worth keeping</div>
+                    </div>
+                    <div class="resonance-panel__count" id="resonance-count">0 kept</div>
+                </div>
+                <div class="resonance-panel__ribbon" id="resonance-ribbon"></div>
+            </section>
 
             <div class="metrics-panel__row">
                 <div class="metric-group">

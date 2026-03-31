@@ -649,3 +649,105 @@
 .telemetry-diff.compare-cards-active {
     display: none;
 }
+
+.resonance-panel {
+    margin-top: 12px;
+    padding: 14px;
+    border: 1px solid rgba(255, 184, 0, 0.18);
+    border-radius: 10px;
+    background:
+        radial-gradient(circle at top left, rgba(255, 184, 0, 0.12), transparent 48%),
+        linear-gradient(180deg, rgba(255, 184, 0, 0.05), rgba(255, 120, 200, 0.03));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 20px rgba(255, 184, 0, 0.04);
+    animation: metricsFadeIn 0.55s ease-out 0.12s both;
+}
+
+.resonance-panel__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.resonance-panel__eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 184, 0, 0.58);
+}
+
+.resonance-panel__title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    color: rgba(255, 248, 224, 0.96);
+    margin-top: 2px;
+}
+
+.resonance-panel__count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 184, 0, 0.72);
+    white-space: nowrap;
+}
+
+.resonance-panel__ribbon {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.resonance-panel__item {
+    position: relative;
+    text-align: left;
+    width: 100%;
+    border: 1px solid rgba(255, 184, 0, 0.12);
+    background: rgba(255, 184, 0, 0.04);
+    border-radius: 10px;
+    padding: 11px 12px 11px 18px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.resonance-panel__item::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 12px;
+    bottom: 12px;
+    width: 2px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255, 184, 0, 0.85), rgba(255, 120, 200, 0.4));
+    opacity: 0.9;
+}
+
+.resonance-panel__item:hover {
+    border-color: rgba(255, 184, 0, 0.28);
+    transform: translateX(2px);
+    background: rgba(255, 184, 0, 0.08);
+}
+
+.resonance-panel__item--selected {
+    border-color: rgba(255, 184, 0, 0.35);
+    background: rgba(255, 184, 0, 0.11);
+    box-shadow: 0 0 18px rgba(255, 184, 0, 0.08);
+}
+
+.resonance-panel__excerpt {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
+    color: rgba(255, 248, 224, 0.94);
+}
+
+.resonance-panel__meta {
+    margin-top: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 184, 0, 0.58);
+}

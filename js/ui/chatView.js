@@ -41,6 +41,27 @@ function createChatView(elements) {
         }
     }
 
+    function setResonanceState(id, resonance) {
+        const node = assistantNodesById.get(id);
+        if (!node) {
+            return;
+        }
+        const isMarked = Boolean(resonance?.excerpt);
+        node.classList.toggle("message--resonant", isMarked);
+
+        const button = node.querySelector("[data-resonance-toggle]");
+        if (!button) {
+            return;
+        }
+        button.classList.toggle("message-resonance__button--active", isMarked);
+        button.setAttribute("aria-pressed", isMarked ? "true" : "false");
+        button.setAttribute("title", isMarked ? "Remove from kept moments" : "Keep this moment");
+        const label = button.querySelector(".message-resonance__label");
+        if (label) {
+            label.textContent = isMarked ? "Kept" : "Keep this";
+        }
+    }
+
     /**
      * @param {{ pendingId: string | null, leftId: string | null, rightId: string | null }} ids
      */
@@ -156,6 +177,24 @@ function createChatView(elements) {
             qualityBadge.appendChild(qualityValue);
 
             node.appendChild(qualityBadge);
+
+            const resonanceBadge = document.createElement("div");
+            resonanceBadge.className = "message-resonance";
+
+            const resonanceButton = document.createElement("button");
+            resonanceButton.className = "message-resonance__button";
+            resonanceButton.type = "button";
+            resonanceButton.setAttribute("data-message-id", id);
+            resonanceButton.setAttribute("data-resonance-toggle", "true");
+            resonanceButton.setAttribute("aria-pressed", "false");
+            resonanceButton.setAttribute("title", "Keep this moment");
+            resonanceButton.innerHTML = `
+                <span class="message-resonance__pulse" aria-hidden="true"></span>
+                <span class="message-resonance__label">Keep this</span>
+            `;
+
+            resonanceBadge.appendChild(resonanceButton);
+            node.appendChild(resonanceBadge);
         }
 
         messagesEl.appendChild(node);
@@ -273,6 +312,7 @@ function createChatView(elements) {
         setOnAssistantSelect,
         getAssistantNode,
         setQualityRating,
+        setResonanceState,
     };
 }
 

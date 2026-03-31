@@ -5,6 +5,11 @@ import { sendChatCompletion, streamChatCompletion } from "./services/chatClient.
 import { buildDebugBundleMarkdown, canExportDebugBundle } from "./telemetry/debugBundle.js";
 import { computeCumulativeCostSeries } from "./telemetry/sessionCostSeries.js";
 import { buildTelemetrySnapshot } from "./telemetry/snapshot.js";
+import {
+    buildQualityInsights,
+    buildQualityRecommendations,
+    computeNextTurnSuggestion,
+} from "./telemetry/qualityInsights.js";
 import { createAppState, createMessage } from "./state.js";
 import { createCompareConstellation } from "./ui/compareConstellation.js";
 import { createChatView } from "./ui/chatView.js";
@@ -58,6 +63,16 @@ const dom = {
     telemetryDiffClose: document.querySelector("#telemetry-diff-close"),
     qualityGroup: document.querySelector("#metric-quality-group"),
     qualityValue: document.querySelector("#metric-quality-value"),
+    qualityInsights: document.querySelector("#quality-insights"),
+    qualityInsightsContent: document.querySelector("#quality-insights-content"),
+    recommendationEl: document.querySelector("#quality-recommendation"),
+    recommendationTextEl: document.querySelector("#quality-recommendation-text"),
+    recommendationBtnEl: document.querySelector("#quality-recommendation-apply"),
+    resonancePanel: document.querySelector("#resonance-panel"),
+    resonanceCount: document.querySelector("#resonance-count"),
+    resonanceRibbon: document.querySelector("#resonance-ribbon"),
+    inputCoaching: document.querySelector("#input-coaching"),
+    inputCoachingText: document.querySelector("#input-coaching-text"),
 };
 
 const initialSettings = loadSettings();
@@ -165,6 +180,14 @@ const metricsView = createMetricsView({
     telemetryDiffBodyEl: dom.telemetryDiffBody,
     qualityGroupEl: dom.qualityGroup,
     qualityValueEl: dom.qualityValue,
+    qualityInsightsEl: dom.qualityInsights,
+    qualityInsightsContentEl: dom.qualityInsightsContent,
+    recommendationEl: dom.recommendationEl,
+    recommendationTextEl: dom.recommendationTextEl,
+    recommendationBtnEl: dom.recommendationBtnEl,
+    resonancePanelEl: dom.resonancePanel,
+    resonanceCountEl: dom.resonanceCount,
+    resonanceRibbonEl: dom.resonanceRibbon,
 });
 
 function messageToPersisted(m) {
@@ -174,6 +197,7 @@ function messageToPersisted(m) {
         content: m.content,
         telemetrySnapshot: m.telemetrySnapshot ?? null,
         quality: m.quality ?? null,
+        resonance: m.resonance ?? null,
     };
 }
 
@@ -191,12 +215,24 @@ function validatePersistedMessage(raw) {
         return null;
     }
     const quality = raw.quality ?? null;
+    const rawResonance = raw.resonance ?? null;
+    const resonance =
+        rawResonance &&
+        typeof rawResonance === "object" &&
+        typeof rawResonance.excerpt === "string" &&
+        rawResonance.excerpt.trim().length > 0
+            ? {
+                excerpt: rawResonance.excerpt.trim(),
+                capturedAt: typeof rawResonance.capturedAt === "number" ? rawResonance.capturedAt : Date.now(),
+            }
+            : null;
     return {
         id: raw.id,
         role: raw.role,
         content: raw.content,
         telemetrySnapshot: raw.telemetrySnapshot ?? null,
         quality: typeof quality === "number" && quality >= 1 && quality <= 5 ? quality : null,
+        resonance,
     };
 }
 
@@ -274,6 +310,57 @@ function resetChat() {
     applyTelemetryView();
 }
 
+function updateInputCoaching() {
+    // Show coaching suggestion in input area based on current session quality
+    if (!dom.inputCoaching || !dom.inputCoachingText) {
+        return;
+    }
+
+    // Don't show during streaming or comparing
+    if (state.isStreaming || state.telemetryComparePair) {
+        dom.inputCoaching.hidden = true;
+        return;
+    }
+
+    const suggestion = computeNextTurnSuggestion(state.messages, state.settings);
+    if (suggestion) {
+        dom.inputCoachingText.textContent = suggestion.text;
+        dom.inputCoaching.hidden = false;
+    } else {
+        dom.inputCoaching.hidden = true;
+    }
+}
+
+function toPlainExcerpt(content) {
+    if (typeof content !== "string") {
+        return "Worth keeping.";
+    }
+    const plain = content
+        .replace(/```[\s\S]*?```/g, " ")
+        .replace(/`([^`]+)`/g, "$1")
+        .replace(/!\[[^\]]*]\([^)]+\)/g, " ")
+        .replace(/\[([^\]]+)]\([^)]+\)/g, "$1")
+        .replace(/[*_>#~-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    if (!plain) {
+        return "Worth keeping.";
+    }
+    const firstSentence = plain.match(/(.{1,140}?[.!?])(\s|$)/)?.[1] ?? plain.slice(0, 140);
+    return firstSentence.trim();
+}
+
+function buildResonanceItems(messages) {
+    return messages
+        .filter((m) => m.role === "assistant" && m.resonance?.excerpt)
+        .sort((a, b) => (a.resonance?.capturedAt ?? 0) - (b.resonance?.capturedAt ?? 0))
+        .map((m, index, list) => ({
+            id: m.id,
+            excerpt: m.resonance.excerpt,
+            meta: index === list.length - 1 ? "Latest kept moment" : `Moment ${index + 1}`,
+        }));
+}
+
 function applyTelemetryView() {
     try {
         if (state.isStreaming) {
@@ -281,6 +368,11 @@ function applyTelemetryView() {
             chatView.setTelemetrySelection(null);
             chatView.setCompareHighlight({ pendingId: null, leftId: null, rightId: null });
             metricsView.hideTelemetryDiff();
+            const insights = buildQualityInsights(state.messages);
+            metricsView.showQualityInsights(insights);
+            const recommendation = buildQualityRecommendations(state.messages);
+            metricsView.showRecommendation(recommendation);
+            metricsView.showResonance(buildResonanceItems(state.messages), state.telemetrySelectionId);
             updateDebugBundleButton();
             refreshSessionSparkline();
             return;
@@ -296,6 +388,9 @@ function applyTelemetryView() {
                 metricsView.hydrateFromSnapshot(lSnap, state.sessionCostUsd);
                 metricsView.setQualityDisplay(leftMsg?.quality);
                 metricsView.showTelemetryDiff(lSnap, rSnap, leftMsg?.quality, rightMsg?.quality);
+                metricsView.showQualityInsights(null);
+                metricsView.hideRecommendation();
+                metricsView.showResonance(buildResonanceItems(state.messages), null);
                 metricsView.setTelemetryViewMode("diff");
                 chatView.setTelemetrySelection(null);
                 chatView.setCompareHighlight({ pendingId: null, leftId: pair.left, rightId: pair.right });
@@ -318,6 +413,7 @@ function applyTelemetryView() {
                 rightId: null,
             });
             metricsView.setTelemetryViewMode(state.telemetryComparePendingId ? "pending" : "empty");
+            metricsView.showResonance(buildResonanceItems(state.messages), null);
             updateDebugBundleButton();
             refreshSessionSparkline();
             return;
@@ -338,6 +434,7 @@ function applyTelemetryView() {
                 rightId: null,
             });
             metricsView.setTelemetryViewMode(state.telemetryComparePendingId ? "pending" : "empty");
+            metricsView.showResonance(buildResonanceItems(state.messages), null);
             updateDebugBundleButton();
             refreshSessionSparkline();
             return;
@@ -348,6 +445,11 @@ function applyTelemetryView() {
         const viewingHistory = targetId !== lastId;
         const mode = state.telemetryComparePendingId ? "pending" : viewingHistory ? "history" : "live";
         metricsView.setTelemetryViewMode(mode);
+        const insights = buildQualityInsights(state.messages);
+        metricsView.showQualityInsights(insights);
+        const recommendation = buildQualityRecommendations(state.messages);
+        metricsView.showRecommendation(recommendation);
+        metricsView.showResonance(buildResonanceItems(state.messages), targetId);
         chatView.setTelemetrySelection(viewingHistory ? targetId : null);
         chatView.setCompareHighlight({
             pendingId: state.telemetryComparePendingId,
@@ -360,6 +462,7 @@ function applyTelemetryView() {
         syncCompareConstellation();
         syncVitalsCards();
         updateChatResetButton();
+        updateInputCoaching();
     }
 }
 
@@ -373,7 +476,12 @@ function restorePersistedThread() {
     for (const raw of persisted.messages) {
         const m = validatePersistedMessage(raw);
         if (m) {
-            nextMessages.push(createMessage(m.role, m.content, { id: m.id, telemetrySnapshot: m.telemetrySnapshot, quality: m.quality }));
+            nextMessages.push(createMessage(m.role, m.content, {
+                id: m.id,
+                telemetrySnapshot: m.telemetrySnapshot,
+                quality: m.quality,
+                resonance: m.resonance,
+            }));
         }
     }
     if (nextMessages.length === 0) {
@@ -398,6 +506,9 @@ function restorePersistedThread() {
         });
         if (m.quality && handle.qualityDisplay) {
             chatView.setQualityRating(handle.qualityDisplay, m.quality);
+        }
+        if (m.resonance) {
+            chatView.setResonanceState(m.id, m.resonance);
         }
     }
 }
@@ -484,6 +595,32 @@ dom.copyDebugBundleBtn?.addEventListener("click", async () => {
 
 // Handle quality rating clicks via event delegation
 dom.messages.addEventListener("click", (event) => {
+    if (event.target.closest(".quality-rating-dot, [data-resonance-toggle]")) {
+        event.stopPropagation();
+    }
+}, true);
+
+dom.messages.addEventListener("click", (event) => {
+    const resonanceToggle = event.target.closest("[data-resonance-toggle]");
+    if (resonanceToggle) {
+        event.stopPropagation();
+        const messageId = resonanceToggle.getAttribute("data-message-id");
+        const message = state.messages.find((m) => m.id === messageId);
+        if (!message) return;
+
+        message.resonance = message.resonance?.excerpt
+            ? null
+            : {
+                excerpt: toPlainExcerpt(message.content),
+                capturedAt: Date.now(),
+            };
+
+        chatView.setResonanceState(message.id, message.resonance);
+        persistSession();
+        applyTelemetryView();
+        return;
+    }
+
     const qualityDot = event.target.closest(".quality-rating-dot");
     if (!qualityDot) return;
 
@@ -502,7 +639,27 @@ dom.messages.addEventListener("click", (event) => {
     // Update UI
     chatView.setQualityRating(qualityDisplay, rating);
 
-    // Persist
+    // Persist and update coaching
+    persistSession();
+    updateInputCoaching();
+    applyTelemetryView();
+});
+
+dom.resonanceRibbon?.addEventListener("click", (event) => {
+    const item = event.target.closest(".resonance-panel__item");
+    if (!item) {
+        return;
+    }
+    const messageId = item.dataset.messageId;
+    if (!messageId) {
+        return;
+    }
+
+    state.telemetryComparePendingId = null;
+    state.telemetryComparePair = null;
+    const lastId = getLastAssistantSnapshotId(state.messages);
+    state.telemetrySelectionId = messageId === lastId ? null : messageId;
+    applyTelemetryView();
     persistSession();
 });
 
@@ -518,6 +675,28 @@ dom.telemetryDiffClose?.addEventListener("click", () => {
     clearTelemetryCompare();
     applyTelemetryView();
     persistSession();
+});
+
+dom.recommendationBtnEl?.addEventListener("click", () => {
+    const recEl = dom.recommendationEl;
+    if (!recEl) return;
+    const recData = recEl.dataset.recommendation;
+    if (!recData) return;
+
+    try {
+        const recommendation = JSON.parse(recData);
+        if (recommendation.type === "webSearch") {
+            state.settings.webSearchMode = recommendation.setting;
+            dom.settingsWebSearchMode.value = recommendation.setting;
+        } else if (recommendation.type === "streaming") {
+            state.settings.streamEnabled = recommendation.setting === "on";
+            dom.settingsStreamEnabled.checked = recommendation.setting === "on";
+        }
+        metricsView.hideRecommendation();
+        persistSession();
+    } catch (e) {
+        console.error("Failed to apply recommendation:", e);
+    }
 });
 
 document.addEventListener("keydown", (event) => {

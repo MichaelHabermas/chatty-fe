@@ -194,3 +194,125 @@
 .telemetry-diff__td--quality {
     color: rgba(255, 184, 0, 0.8);
 }
+
+/* Quality Insights Section */
+.quality-insights {
+    border-top: 1px solid rgba(255, 184, 0, 0.15);
+    padding-top: 12px;
+    margin-top: 12px;
+}
+
+.quality-insights__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.quality-insights__title {
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 184, 0, 0.6);
+}
+
+.quality-insights__dimension {
+    margin-bottom: 12px;
+}
+
+.quality-insights__dimension-label {
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 184, 0, 0.5);
+    margin-bottom: 6px;
+}
+
+.quality-insights__group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background: rgba(255, 184, 0, 0.03);
+    border-radius: 4px;
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+
+.quality-insights__group-label {
+    color: rgba(255, 184, 0, 0.7);
+    flex: 1;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.quality-insights__group-value {
+    color: rgba(255, 184, 0, 0.9);
+    font-weight: 600;
+    text-align: right;
+    min-width: 60px;
+}
+
+.quality-insights__group-count {
+    color: rgba(255, 184, 0, 0.4);
+    font-size: 10px;
+    margin-left: 8px;
+    text-align: right;
+    min-width: 40px;
+}
+
+/* Quality Recommendation Banner */
+.quality-recommendation {
+    background: rgba(255, 184, 0, 0.08);
+    border: 1px solid rgba(255, 184, 0, 0.2);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(255, 184, 0, 0.8);
+    animation: recommendationSlideIn 0.3s ease-out;
+}
+
+.quality-recommendation__text {
+    flex: 1;
+}
+
+.quality-recommendation__btn {
+    background: rgba(255, 184, 0, 0.2);
+    border: 1px solid rgba(255, 184, 0, 0.3);
+    color: rgba(255, 184, 0, 0.9);
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.quality-recommendation__btn:hover {
+    background: rgba(255, 184, 0, 0.3);
+    border-color: rgba(255, 184, 0, 0.5);
+    transform: translateY(-1px);
+}
+
+.quality-recommendation__btn:active {
+    transform: translateY(0);
+}
+
+@keyframes recommendationSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

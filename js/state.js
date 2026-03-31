@@ -24,6 +24,7 @@ function createMessage(role, content, extra = {}) {
         content,
         telemetrySnapshot: extra.telemetrySnapshot ?? null,
         quality: extra.quality ?? null,
+        resonance: extra.resonance ?? null,
     };
 }
 
