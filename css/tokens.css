@@ -5,8 +5,16 @@
     --accent-cyan: #00f0ff;
     --accent-cyan-glow: rgba(0, 240, 255, 0.3);
     --accent-amber: #ffb800;
+    --accent-rose: #ff78c8;
     --text-primary: #f5f7fa;
     --text-muted: #8b92a9;
     --text-mono: #00f0ff;
     --success-green: #00d960;
+    --weather-cyan-strength: 1;
+    --weather-amber-strength: 0.16;
+    --weather-rose-strength: 0.08;
+    --weather-static-opacity: 0.02;
+    --weather-drift-opacity: 0.18;
+    --weather-panel-glow: 0.05;
+    --weather-chat-glow: 0.04;
 }

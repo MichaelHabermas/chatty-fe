@@ -18,6 +18,7 @@ import { createSettingsView } from "./ui/settingsView.js";
 import { createVitalsCardManager } from "./ui/vitalsCard.js";
 
 const dom = {
+    cockpit: document.querySelector("#cockpit"),
     chatForm: document.querySelector("#chat-form"),
     chatInput: document.querySelector("#chat-input"),
     sendBtn: document.querySelector("#send-btn"),
@@ -361,6 +362,44 @@ function buildResonanceItems(messages) {
         }));
 }
 
+function computeSessionWeather(messages) {
+    const rated = messages.filter((m) => m.role === "assistant" && typeof m.quality === "number");
+    const kept = messages.filter((m) => m.role === "assistant" && m.resonance?.excerpt);
+    const assistantCount = messages.filter((m) => m.role === "assistant").length;
+
+    if (assistantCount === 0) {
+        return "neutral";
+    }
+
+    const averageQuality = rated.length > 0
+        ? rated.reduce((sum, m) => sum + m.quality, 0) / rated.length
+        : 0;
+    const highQualityCount = rated.filter((m) => m.quality >= 4).length;
+    const lowQualityCount = rated.filter((m) => m.quality <= 2).length;
+    const resonanceRatio = kept.length / Math.max(assistantCount, 1);
+
+    if (lowQualityCount >= 2 && averageQuality > 0 && averageQuality <= 2.8) {
+        return "storm";
+    }
+
+    if (kept.length >= 1 || resonanceRatio >= 0.34) {
+        return "ember";
+    }
+
+    if (highQualityCount >= 2 || averageQuality >= 4.1) {
+        return "lucid";
+    }
+
+    return "neutral";
+}
+
+function applySessionWeather() {
+    if (!dom.cockpit) {
+        return;
+    }
+    dom.cockpit.dataset.weather = computeSessionWeather(state.messages);
+}
+
 function applyTelemetryView() {
     try {
         if (state.isStreaming) {
@@ -459,6 +498,7 @@ function applyTelemetryView() {
         updateDebugBundleButton();
         refreshSessionSparkline();
     } finally {
+        applySessionWeather();
         syncCompareConstellation();
         syncVitalsCards();
         updateChatResetButton();

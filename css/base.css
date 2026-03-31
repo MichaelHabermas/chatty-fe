@@ -13,3 +13,27 @@ body {
     font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     overflow: hidden;
 }
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(
+            115deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, var(--weather-static-opacity)) 44%,
+            rgba(255, 255, 255, 0) 100%
+        );
+    mix-blend-mode: screen;
+    opacity: 0.8;
+    animation: weatherStaticDrift 18s linear infinite;
+    z-index: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::before {
+        animation: none;
+    }
+}

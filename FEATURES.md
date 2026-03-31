@@ -97,3 +97,35 @@ See **what changed** between two completions without pasting two debug bundles.
 ### Docs
 
 `js/telemetry/telemetryDiff.js`, `js/ui/metricsView.js`, `js/ui/chatView.js`, `js/main.js`.
+
+---
+
+## Resonance Mode (chatty-fe)
+
+### Added
+
+Assistant replies now have a **Keep this** action that marks a turn as a kept moment. Kept replies get an amber afterglow in the thread, persist in **`localStorage`** with the rest of the thread state, and populate a **Resonance Mode** ribbon in the Telemetry sidebar. Clicking a kept moment in the ribbon jumps the sidebar back to that reply’s telemetry context.
+
+### Why
+
+Telemetry says what happened; resonance says **what mattered**. The session can now remember the replies worth revisiting, not just the replies with measurable stats.
+
+### Docs
+
+`index.html`, `js/main.js`, `js/state.js`, `js/storage/threadPersistence.js`, `js/ui/chatView.js`, `js/ui/metricsView.js`, `css/components/chat.css`, `css/components/metrics.css`.
+
+---
+
+## Emotional weather (chatty-fe)
+
+### Added
+
+The cockpit now derives a lightweight **session weather** state from assistant-turn quality and kept moments: **`neutral`**, **`lucid`**, **`ember`**, or **`storm`**. That state is applied on the root cockpit container and drives global CSS variables for ambient drift, tint, glow, and static, so the room subtly changes as the conversation changes.
+
+### Why
+
+The UI should feel like it has a memory of the session, not just a stack of isolated turns. Emotional weather gives the cockpit an evolving atmosphere without adding another dashboard widget.
+
+### Docs
+
+`index.html`, `js/main.js`, `css/tokens.css`, `css/base.css`, `css/layout.css`, `css/animations.css`.
