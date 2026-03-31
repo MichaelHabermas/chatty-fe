@@ -106,6 +106,16 @@ function syncCompareConstellation() {
     });
 }
 
+function renderVitalsForMessage(msg) {
+    if (!msg) {
+        return;
+    }
+    const node = chatView.getAssistantNode(msg.id);
+    if (node) {
+        vitalsCardManager.render(node, msg.id);
+    }
+}
+
 function syncVitalsCards() {
     vitalsCardManager.clearAll();
 
@@ -113,36 +123,15 @@ function syncVitalsCards() {
         return;
     }
 
-    // Show vitals for compare mode
     if (state.telemetryComparePair) {
-        const leftMsg = state.messages.find((m) => m.id === state.telemetryComparePair.left);
-        const rightMsg = state.messages.find((m) => m.id === state.telemetryComparePair.right);
-
-        if (leftMsg) {
-            const leftNode = chatView.getAssistantNode(leftMsg.id);
-            if (leftNode) {
-                vitalsCardManager.render(leftNode, leftMsg.id);
-            }
-        }
-
-        if (rightMsg) {
-            const rightNode = chatView.getAssistantNode(rightMsg.id);
-            if (rightNode) {
-                vitalsCardManager.render(rightNode, rightMsg.id);
-            }
-        }
+        const { left, right } = state.telemetryComparePair;
+        renderVitalsForMessage(state.messages.find((m) => m.id === left));
+        renderVitalsForMessage(state.messages.find((m) => m.id === right));
         return;
     }
 
-    // Show vitals for single selection
     if (state.telemetrySelectionId) {
-        const msg = state.messages.find((m) => m.id === state.telemetrySelectionId);
-        if (msg) {
-            const node = chatView.getAssistantNode(msg.id);
-            if (node) {
-                vitalsCardManager.render(node, msg.id);
-            }
-        }
+        renderVitalsForMessage(state.messages.find((m) => m.id === state.telemetrySelectionId));
     }
 }
 
@@ -492,22 +481,6 @@ dom.telemetryDiffClose?.addEventListener("click", () => {
     clearTelemetryCompare();
     applyTelemetryView();
     persistSession();
-});
-
-const compareCardsClose = document.getElementById("compare-cards-close");
-const compareCardsContainer = document.getElementById("compare-cards-container");
-compareCardsClose?.addEventListener("click", () => {
-    clearTelemetryCompare();
-    applyTelemetryView();
-    persistSession();
-});
-
-compareCardsContainer?.addEventListener("click", (event) => {
-    if (event.target === compareCardsContainer) {
-        clearTelemetryCompare();
-        applyTelemetryView();
-        persistSession();
-    }
 });
 
 document.addEventListener("keydown", (event) => {

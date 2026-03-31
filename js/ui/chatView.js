@@ -1,4 +1,5 @@
 import { markdownToSafeHtml } from "../render/markdownToSafeHtml.js";
+import { generateFingerprintSVG, generateFingerprintHash } from "../utils/fingerprint.js";
 
 function createChatView(elements) {
     const { messagesEl, inputEl, sendBtnEl, hintEl, connectionStatusEl } = elements;
@@ -107,10 +108,30 @@ function createChatView(elements) {
         }
 
         node.appendChild(contentNode);
+
+        const id = options.id;
+        if (role === "assistant" && id) {
+            const fingerprintBadge = document.createElement("div");
+            fingerprintBadge.className = "message-fingerprint";
+
+            const fingerprintVisual = document.createElement("div");
+            fingerprintVisual.className = "message-fingerprint-visual";
+            fingerprintVisual.innerHTML = generateFingerprintSVG(id);
+
+            const hashText = generateFingerprintHash(id);
+            const fingerprintHashEl = document.createElement("div");
+            fingerprintHashEl.className = "message-fingerprint-hash";
+            fingerprintHashEl.textContent = hashText;
+            fingerprintHashEl.title = `Fingerprint: ${hashText}`;
+
+            fingerprintBadge.appendChild(fingerprintVisual);
+            fingerprintBadge.appendChild(fingerprintHashEl);
+            node.appendChild(fingerprintBadge);
+        }
+
         messagesEl.appendChild(node);
         scrollToBottom();
 
-        const id = options.id;
         if (role === "assistant" && id && options.selectable !== false) {
             bindAssistantNode(node, id);
         }

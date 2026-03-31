@@ -24,6 +24,13 @@ function groqTimingMsFromTimings(timings) {
     };
 }
 
+function createTelemetryDiffCell(text, isDelta) {
+    const td = document.createElement("td");
+    td.className = isDelta ? "telemetry-diff__td telemetry-diff__td--delta" : "telemetry-diff__td";
+    td.textContent = text;
+    return td;
+}
+
 function createMetricsView(elements) {
     const {
         modelEl,
@@ -238,99 +245,41 @@ function createMetricsView(elements) {
         if (!telemetryViewLabelEl) {
             return;
         }
-        if (mode === "diff") {
+        const labelByMode = {
+            diff: "Comparing two replies (first vs second)",
+            pending: "Shift+click another reply to compare",
+            history: "Inspecting a past assistant reply",
+            empty: "No requests yet",
+        };
+        const label = labelByMode[mode];
+        if (label !== undefined) {
             telemetryViewLabelEl.classList.remove("metrics-panel__view--live");
             telemetryViewLabelEl.removeAttribute("aria-hidden");
-            telemetryViewLabelEl.textContent = "Comparing two replies (first vs second)";
-        } else if (mode === "pending") {
-            telemetryViewLabelEl.classList.remove("metrics-panel__view--live");
-            telemetryViewLabelEl.removeAttribute("aria-hidden");
-            telemetryViewLabelEl.textContent = "Shift+click another reply to compare";
-        } else if (mode === "history") {
-            telemetryViewLabelEl.classList.remove("metrics-panel__view--live");
-            telemetryViewLabelEl.removeAttribute("aria-hidden");
-            telemetryViewLabelEl.textContent = "Inspecting a past assistant reply";
-        } else if (mode === "empty") {
-            telemetryViewLabelEl.classList.remove("metrics-panel__view--live");
-            telemetryViewLabelEl.removeAttribute("aria-hidden");
-            telemetryViewLabelEl.textContent = "No requests yet";
-        } else {
-            telemetryViewLabelEl.classList.add("metrics-panel__view--live");
-            telemetryViewLabelEl.setAttribute("aria-hidden", "true");
-            telemetryViewLabelEl.textContent = "";
-        }
-    }
-
-    function renderCompareCards(leftSnap, rightSnap) {
-        const container = document.getElementById("compare-cards-container");
-        const leftContent = document.getElementById("compare-card-left-content");
-        const rightContent = document.getElementById("compare-card-right-content");
-
-        if (!container || !leftContent || !rightContent) {
+            telemetryViewLabelEl.textContent = label;
             return;
         }
-
-        const rows = buildDiffRows(leftSnap, rightSnap);
-        leftContent.replaceChildren();
-        rightContent.replaceChildren();
-
-        for (const row of rows) {
-            // Left card metric
-            const leftMetric = document.createElement("div");
-            leftMetric.className = "compare-metric";
-            leftMetric.innerHTML = `
-                <div class="compare-metric-name">${row.label}</div>
-                <div class="compare-metric-value">${row.a}</div>
-            `;
-            leftContent.appendChild(leftMetric);
-
-            // Right card metric
-            const rightMetric = document.createElement("div");
-            rightMetric.className = "compare-metric";
-            rightMetric.innerHTML = `
-                <div class="compare-metric-name">${row.label}</div>
-                <div class="compare-metric-value">${row.b}</div>
-            `;
-            rightContent.appendChild(rightMetric);
-        }
-
-        container.classList.add("active");
-    }
-
-    function hideCompareCards() {
-        const container = document.getElementById("compare-cards-container");
-        if (container) {
-            container.classList.remove("active");
-        }
+        telemetryViewLabelEl.classList.add("metrics-panel__view--live");
+        telemetryViewLabelEl.setAttribute("aria-hidden", "true");
+        telemetryViewLabelEl.textContent = "";
     }
 
     function showTelemetryDiff(leftSnap, rightSnap) {
-        renderCompareCards(leftSnap, rightSnap);
-
-        // Also keep table for fallback
         if (!telemetryDiffEl || !telemetryDiffBodyEl) {
             return;
         }
         telemetryDiffBodyEl.replaceChildren();
         for (const row of buildDiffRows(leftSnap, rightSnap)) {
             const tr = document.createElement("tr");
-            const mk = (text, isDelta) => {
-                const td = document.createElement("td");
-                td.className = isDelta ? "telemetry-diff__td telemetry-diff__td--delta" : "telemetry-diff__td";
-                td.textContent = text;
-                tr.appendChild(td);
-            };
-            mk(row.label, false);
-            mk(row.a, false);
-            mk(row.b, false);
-            mk(row.delta, true);
+            tr.appendChild(createTelemetryDiffCell(row.label, false));
+            tr.appendChild(createTelemetryDiffCell(row.a, false));
+            tr.appendChild(createTelemetryDiffCell(row.b, false));
+            tr.appendChild(createTelemetryDiffCell(row.delta, true));
             telemetryDiffBodyEl.appendChild(tr);
         }
-        telemetryDiffEl.hidden = true;
+        telemetryDiffEl.hidden = false;
     }
 
     function hideTelemetryDiff() {
-        hideCompareCards();
         if (telemetryDiffBodyEl) {
             telemetryDiffBodyEl.replaceChildren();
         }

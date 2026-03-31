@@ -380,3 +380,68 @@
     font-size: 11px;
     font-family: 'IBM Plex Mono', monospace;
 }
+
+/* Message Fingerprint Badge */
+.message-fingerprint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+    cursor: help;
+}
+
+.message--assistant-selectable:hover .message-fingerprint {
+    opacity: 1;
+}
+
+.message-fingerprint-visual {
+    width: 32px;
+    height: 32px;
+    padding: 4px;
+    background: rgba(26, 31, 58, 0.8);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fingerprintFadeIn 0.5s ease-out;
+}
+
+.message-fingerprint-visual svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 4px rgba(0, 240, 255, 0.15));
+}
+
+.message-fingerprint-hash {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: rgba(0, 240, 255, 0.5);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0;
+    max-width: 32px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: opacity 0.3s ease;
+}
+
+.message--assistant-selectable:hover .message-fingerprint-hash {
+    opacity: 1;
+}
+
+@keyframes fingerprintFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
